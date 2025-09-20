@@ -44,4 +44,22 @@ r.get('/my', authRequired, async (req,res)=>{
   res.json({ ok:true, items: rows });
 });
 
+// backend/routes/favorites.js (dosyanın SONUNA ekleyin)
+import { authRequired } from '../mw/auth.js';
+
+// GET /api/favorites/my
+r.get('/my', authRequired, async (req,res)=>{
+  const [rows] = await pool.query(
+    `SELECT f.listing_id,
+            l.title,
+            (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS thumb_url,
+            l.price_minor AS price
+       FROM favorites f JOIN listings l ON l.id=f.listing_id
+      WHERE f.user_id=? ORDER BY f.id DESC LIMIT 200`,
+    [req.user.id]
+  );
+  res.json({ items: rows });
+});
+
+
 export default r;

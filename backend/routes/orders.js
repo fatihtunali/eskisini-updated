@@ -73,4 +73,18 @@ r.get('/my', authRequired, async (req, res) => {
   }
 });
 
+// backend/routes/orders.js (dosyanın SONUNA ekleyin)
+import { authRequired } from '../mw/auth.js';
+
+// GET /api/orders/my
+r.get('/my', authRequired, async (req,res)=>{
+  const [rows] = await pool.query(
+    `SELECT id, total_minor, status, created_at
+       FROM orders
+      WHERE buyer_id=? ORDER BY id DESC LIMIT 200`, [req.user.id]
+  );
+  res.json({ orders: rows });
+});
+
+
 export default r;

@@ -153,4 +153,47 @@ r.post('/thread/:id', authRequired, async (req, res) => {
   }
 });
 
+// backend/routes/messages.js (MEVCUTLARA EK)
+// Kullanıcıya ait thread listesi
+import { authRequired } from '../mw/auth.js';
+
+r.get('/threads', authRequired, async (req,res)=>{
+  // Örnek bir “threads” görünümü (uygun şemanızla değiştirin)
+  const [rows] = await pool.query(
+    `SELECT t.id,
+            CASE WHEN t.buyer_id=? THEN u2.full_name ELSE u1.full_name END AS other_user_name,
+            t.updated_at,
+            t.last_message_preview
+       FROM conversations t
+       JOIN users u1 ON u1.id=t.buyer_id
+       JOIN users u2 ON u2.id=t.seller_id
+      WHERE t.buyer_id=? OR t.seller_id=?
+      ORDER BY t.updated_at DESC
+      LIMIT 200`,
+    [req.user.id, req.user.id, req.user.id]
+  );
+  res.json({ threads: rows });
+});
+
+// Thread mesajları: GET /api/messages/thread/:id
+r.get('/thread/:id', authRequired, async (req,res)=>{
+  const { id } = req.params;
+  const [rows] = await pool.query(
+    `SELECT id,sender_id,body,created_at
+       FROM messages WHERE conversation_id=? ORDER BY id`, [id]
+  );
+  res.json({ ok:true, messages: rows });
+});
+
+// Thread’e mesaj gönder: POST /api/messages/thread/:id
+r.post('/thread/:id', authRequired, async (req,res)=>{
+  const { id } = req.params;
+  const body = (req.body?.body||'').toString().trim();
+  if(!body) return res.status(400).json({ok:false,error:'Boş mesaj'});
+  await pool.query('INSERT INTO messages (conversation_id,sender_id,body) VALUES (?,?,?)', [id, req.user.id, body]);
+  await pool.query('UPDATE conversations SET last_msg_at=NOW(), last_message_preview=? WHERE id=?', [body.slice(0,200), id]);
+  res.json({ ok:true });
+});
+
+
 export default r;

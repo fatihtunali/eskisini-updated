@@ -166,4 +166,54 @@ r.get('/:slug', async (req, res) => {
   res.json({ ok: true, listing: row, images: imgs });
 });
 
+// backend/routes/listings.js (dosyanın SONUNA ekleyin)
+import { authRequired } from '../mw/auth.js';
+
+// POST /api/listings
+r.post('/', authRequired, async (req,res)=>{
+  try{
+    const seller_id = req.user.id;
+    const { category_slug, title, slug, description_md='', price_minor, currency='TRY',
+            condition_grade='good', location_city='', image_urls=[] } = req.body || {};
+
+    if(!category_slug || !title || !price_minor) return res.status(400).json({ok:false,error:'Eksik alan'});
+
+    const [[cat]] = await pool.query('SELECT id FROM categories WHERE slug=? LIMIT 1', [category_slug]);
+    if(!cat) return res.status(400).json({ok:false,error:'Kategori yok'});
+
+    const [rs] = await pool.query(
+      `INSERT INTO listings
+       (seller_id,category_id,title,slug,description_md,price_minor,currency,condition_grade,location_city,allow_trade,status,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?, 1, 'active', NOW(), NOW())`,
+      [seller_id, cat.id, title, slug || null, description_md, price_minor, currency, condition_grade, location_city || null]
+    );
+    const listingId = rs.insertId;
+
+    if (Array.isArray(image_urls) && image_urls.length){
+      const values = image_urls.map((u,i)=>[listingId, u, null, i+1]);
+      await pool.query('INSERT INTO listing_images (listing_id,file_url,thumb_url,sort_order) VALUES ?', [values]);
+    }
+    res.json({ ok:true, id: listingId });
+  }catch(e){ console.error(e); res.status(400).json({ok:false,error:e.message}); }
+});
+
+// GET /api/listings/my
+r.get('/my', authRequired, async (req,res)=>{
+  const page = Math.max(1, parseInt(req.query.page||'1',10));
+  const size = Math.min(50, Math.max(1, parseInt(req.query.size||'12',10)));
+  const off  = (page-1)*size;
+
+  const [[{cnt}]] = await pool.query(`SELECT COUNT(*) cnt FROM listings WHERE seller_id=?`, [req.user.id]);
+  const [rows] = await pool.query(
+    `SELECT l.id, l.title, l.price_minor AS price, c.name AS category_name,
+            (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS thumb_url,
+            l.slug, l.created_at
+       FROM listings l JOIN categories c ON c.id=l.category_id
+      WHERE l.seller_id=? ORDER BY l.id DESC LIMIT ? OFFSET ?`,
+    [req.user.id, size, off]
+  );
+  res.json({ total: cnt, page, size, items: rows });
+});
+
+
 export default r;
