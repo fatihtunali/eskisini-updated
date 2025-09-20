@@ -50,23 +50,35 @@ r.get('/search', async (req, res) => {
   res.json({ ok: true, listings: rows });
 });
 
-/** Detay */
-r.get('/:slug', async (req, res) => {
-  const { slug } = req.params;
-  const [[row]] = await pool.query(
-    `SELECT l.*, c.name AS category_name, c.slug AS category_slug
-       FROM listings l
-       JOIN categories c ON c.id = l.category_id
-      WHERE l.slug=?`,
-    [slug]
-  );
-  if (!row) return res.status(404).json({ ok: false, error: 'İlan yok' });
+/** İlanlarım */
+r.get('/my', authRequired, async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page || '1', 10));
+  const size = Math.min(50, Math.max(1, parseInt(req.query.size || '12', 10)));
+  const off = (page - 1) * size;
 
-  const [imgs] = await pool.query(
-    'SELECT id,file_url,thumb_url,sort_order FROM listing_images WHERE listing_id=? ORDER BY sort_order,id',
-    [row.id]
+  const [[{ cnt }]] = await pool.query(
+    `SELECT COUNT(*) cnt FROM listings WHERE seller_id = ?`,
+    [req.user.id]
   );
-  res.json({ ok: true, listing: row, images: imgs });
+
+  const [rows] = await pool.query(
+    `SELECT
+        l.id,
+        l.title,
+        l.slug,
+        l.price_minor AS price,                -- frontend (x.price/100) için alias
+        c.name AS category_name,
+        (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS thumb_url,
+        l.created_at
+     FROM listings l
+     JOIN categories c ON c.id = l.category_id
+     WHERE l.seller_id = ?
+     ORDER BY l.id DESC
+     LIMIT ? OFFSET ?`,
+    [req.user.id, size, off]
+  );
+
+  res.json({ total: cnt, page, size, items: rows });
 });
 
 /** Ekleme (auth’lu) – görseller URL */
@@ -110,35 +122,31 @@ r.post('/', authRequired, async (req, res) => {
   }
 });
 
-/** İlanlarım */
-r.get('/my', authRequired, async (req, res) => {
-  const page = Math.max(1, parseInt(req.query.page || '1', 10));
-  const size = Math.min(50, Math.max(1, parseInt(req.query.size || '12', 10)));
-  const off = (page - 1) * size;
-
-  const [[{ cnt }]] = await pool.query(
-    `SELECT COUNT(*) cnt FROM listings WHERE seller_id = ?`,
-    [req.user.id]
+/** Detay */
+r.get('/:slug', async (req, res) => {
+  const { slug } = req.params;
+  const [[row]] = await pool.query(
+    `SELECT l.*, c.name AS category_name, c.slug AS category_slug
+       FROM listings l
+       JOIN categories c ON c.id = l.category_id
+      WHERE l.slug=?`,
+    [slug]
   );
+  if (!row) return res.status(404).json({ ok: false, error: 'İlan yok' });
 
-  const [rows] = await pool.query(
-    `SELECT
-        l.id,
-        l.title,
-        l.slug,
-        l.price_minor AS price,                -- frontend (x.price/100) için alias
-        c.name AS category_name,
-        (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS thumb_url,
-        l.created_at
-     FROM listings l
-     JOIN categories c ON c.id = l.category_id
-     WHERE l.seller_id = ?
-     ORDER BY l.id DESC
-     LIMIT ? OFFSET ?`,
-    [req.user.id, size, off]
+  const [imgs] = await pool.query(
+    'SELECT id,file_url,thumb_url,sort_order FROM listing_images WHERE listing_id=? ORDER BY sort_order,id',
+    [row.id]
   );
-
-  res.json({ total: cnt, page, size, items: rows });
+  res.json({ ok: true, listing: row, images: imgs });
 });
+
+r.get('/my', authRequired, (req,res) => {
+  console.log('[LISTINGS] /my hit by', req.user?.id);
+  // ...
+});
+
+
+
 
 export default r;

@@ -1,12 +1,13 @@
 // public/js/sell.js
 (function () {
   const API_BASE = (window.APP && window.APP.API_BASE) || '';
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
-  // küçük yardımcılar
-  const $ = (s, r = document) => r.querySelector(s);
+  // ---------- helpers ----------
   const toMinor = (v) => {
     if (v == null) return null;
-    const str = String(v).trim().replace(/\./g, '').replace(',', '.'); // "1.234,56" → "1234.56"
+    const str = String(v).trim().replace(/\./g, '').replace(',', '.'); // "1.234,56" -> "1234.56"
     const num = Number(str);
     if (!isFinite(num)) return null;
     return Math.round(num * 100);
@@ -14,25 +15,89 @@
   const slugify = (s) => String(s || '')
     .toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    .replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i')
+    .replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+
+  async function fetchJSON(url, opts = {}) {
+    const r = await fetch(url, {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json', ...(opts.headers||{}) },
+      ...opts
+    });
+    if (r.status === 401) {
+      const u = new URL('/login.html', location.origin);
+      u.searchParams.set('redirect', location.pathname + location.search);
+      location.href = u.toString();
+      throw new Error('unauthorized');
+    }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  }
 
   async function getMe() {
     try {
-      const r = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include' });
-      if (!r.ok) return null;
-      const data = await r.json();
-      return data.user || data;
+      const d = await fetchJSON(`${API_BASE}/api/auth/me`);
+      return d.user || d;
     } catch { return null; }
   }
 
-  function parseImageUrls(raw) {
-    return String(raw || '')
-      .split(/[\n,]/)
-      .map(s => s.trim())
-      .filter(Boolean);
+  // ---------- categories ----------
+  async function loadMainCats(selectEl) {
+    selectEl.innerHTML = `<option value="">Seçiniz…</option>`;
+    const { ok, categories=[] } = await fetchJSON(`${API_BASE}/api/categories/main`);
+    if (ok) {
+      categories.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.slug;
+        opt.textContent = c.name;
+        selectEl.appendChild(opt);
+      });
+    }
+    // Diğer/elle
+    const other = document.createElement('option');
+    other.value = '__other';
+    other.textContent = 'Diğer / Elle gir';
+    selectEl.appendChild(other);
   }
 
+  async function loadChildCats(mainSlug, selectEl) {
+    selectEl.innerHTML = `<option value="">Alt kategori (opsiyonel)</option>`;
+    if (!mainSlug || mainSlug === '__other') {
+      selectEl.disabled = true;
+      return;
+    }
+    const { ok, children=[] } = await fetchJSON(`${API_BASE}/api/categories/children/${encodeURIComponent(mainSlug)}`);
+    if (ok && children.length) {
+      children.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.slug;
+        opt.textContent = c.name;
+        selectEl.appendChild(opt);
+      });
+      selectEl.disabled = false;
+    } else {
+      selectEl.disabled = true;
+    }
+  }
+
+  function getSelectedCategorySlug() {
+    const main = $('#catMain');
+    const child = $('#catChild');
+    const customWrap = $('#customSlugWrap');
+    const custom = $('#customSlug');
+
+    const childSlug = child && !child.disabled ? (child.value || '') : '';
+    if (childSlug) return childSlug;
+
+    const mainSlug = main ? (main.value || '') : '';
+    if (mainSlug && mainSlug !== '__other') return mainSlug;
+
+    const customSlug = custom ? custom.value.trim() : '';
+    return customSlug || '';
+  }
+
+  // ---------- form bind ----------
   function bind() {
     const form = $('#f');
     if (!form || form.dataset.bound) return;
@@ -40,6 +105,27 @@
 
     const msg = $('#msg');
     const submitBtn = form.querySelector('[type="submit"]');
+
+    // Kategori selectlerini hazırla
+    const catMain  = $('#catMain');
+    const catChild = $('#catChild');
+    const customWrap = $('#customSlugWrap');
+    const custom    = $('#customSlug');
+
+    // Ana kategorileri doldur
+    loadMainCats(catMain).catch(console.error);
+
+    // Ana kategori değişince altları ve custom alanını yönet
+    catMain?.addEventListener('change', async () => {
+      const v = catMain.value;
+      customWrap.style.display = (v === '__other') ? '' : 'none';
+      if (v === '__other') {
+        catChild.innerHTML = `<option value="">Önce ana kategoriyi seçin</option>`;
+        catChild.disabled = true;
+        return;
+      }
+      await loadChildCats(v, catChild).catch(console.error);
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -59,6 +145,13 @@
 
         const fd = new FormData(form);
 
+        // category_slug: child -> main -> custom
+        const category_slug = getSelectedCategorySlug();
+        if (!category_slug) {
+          alert('Lütfen bir kategori seçin veya slug girin.');
+          return;
+        }
+
         // price -> price_minor
         let price_minor = null;
         if (fd.has('price_minor') && String(fd.get('price_minor')).trim() !== '') {
@@ -74,9 +167,8 @@
 
         // zorunlular
         const title = String(fd.get('title') || '').trim();
-        const category_slug = String(fd.get('category_slug') || '').trim();
-        if (!title || !category_slug) {
-          alert('Başlık ve kategori zorunludur.');
+        if (!title) {
+          alert('Başlık zorunludur.');
           return;
         }
 
@@ -84,9 +176,10 @@
         let slug = String(fd.get('slug') || '').trim();
         if (!slug) slug = slugify(title);
 
-        const image_urls = parseImageUrls(fd.get('image_urls'));
+        // görseller
+        const image_urls = String(fd.get('image_urls')||'')
+          .split(/[\n,]/).map(s=>s.trim()).filter(Boolean);
 
-        // payload (seller_id frontend’ten gelmez; backend req.user.id kullanıyor)
         const payload = {
           category_slug,
           title,
@@ -125,7 +218,9 @@
     });
   }
 
-  function boot() { bind(); }
+  function boot() {
+    bind();
+  }
 
   document.addEventListener('partials:loaded', boot);
   window.addEventListener('DOMContentLoaded', () => {

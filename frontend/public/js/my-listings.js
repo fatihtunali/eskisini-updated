@@ -1,3 +1,6 @@
+console.log('[MY-LISTINGS] script loaded');
+
+
 // public/js/my-listings.js
 (function () {
   const API_BASE = (window.APP && window.APP.API_BASE) || '';

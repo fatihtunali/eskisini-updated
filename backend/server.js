@@ -8,7 +8,7 @@ import cookieParser from 'cookie-parser';
 
 import auth from './routes/auth.js';
 import categories from './routes/categories.js';
-import listings from './routes/listings.js';
+import listings from './routes/listings.js';   // DİKKAT: listings.js
 import favorites from './routes/favorites.js';
 import messages from './routes/messages.js';
 import trade from './routes/trade.js';
