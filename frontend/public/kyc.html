@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>KYC</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+  <main class="container section">
+    <h1>KYC Doğrulama</h1>
+    <div id="status" class="muted">Durum: —</div>
+    <form id="f">
+      <label>TC Kimlik No (11 hane)
+        <input name="tc_no" required pattern="\d{11}" placeholder="Sadece rakam">
+      </label>
+      <button class="btn primary" type="submit">Gönder</button>
+    </form>
+    <p class="tiny muted">Test: yalnızca 11 haneli format kontrolü yapılır. Gerçek doğrulama daha sonra bağlanacak.</p>
+  </main>
+
+  <div data-include="partials/footer.html"></div>
+
+  <script src="js/partials.js"></script>
+  <script src="js/auth.js"></script>
+  <script>includePartials();</script>
+</body>
+</html>

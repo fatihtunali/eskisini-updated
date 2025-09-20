@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Giriş</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+  <main class="container section">
+    <h1>Giriş</h1>
+    <form id="f">
+      <label>Email<input type="email" name="email" required></label>
+      <label>Şifre<input type="password" name="password" required></label>
+      <button class="btn primary" type="submit">Giriş Yap</button>
+    </form>
+    <p>Hesabın yok mu? <a href="/register.html">Kayıt ol</a></p>
+  </main>
+
+  <div data-include="partials/footer.html"></div>
+
+  <script src="js/partials.js"></script>
+  <script src="js/auth.js"></script>
+  <script>includePartials();</script>
+</body>
+</html>

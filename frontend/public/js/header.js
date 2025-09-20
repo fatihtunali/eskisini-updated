@@ -9,14 +9,11 @@
 
     const go = () => {
       const q = (inp.value || '').trim();
-      // category.html’e git; q varsa parametreye ekle
-      const u = new URL('category.html', location.href);
-      u.search = ''; // eski parametreleri temizle
+      const u = new URL('/category.html', location.origin);
       if (q) u.searchParams.set('q', q);
       location.href = u.toString();
     };
 
-    // Çift bağlamayı önle
     if (btn && !btn.dataset.bound) {
       btn.addEventListener('click', go);
       btn.dataset.bound = '1';
@@ -33,21 +30,14 @@
     return true;
   }
 
-  // 1) DOM hazır olduğunda dene
   document.addEventListener('DOMContentLoaded', () => {
     if (bindHeaderSearch()) return;
 
-    // 2) Partials yüklenmesini bekle: includePartials() sonunda tetikleyeceğimiz olay
     const onLoaded = () => bindHeaderSearch();
     document.addEventListener('partials:loaded', onLoaded, { once: true });
 
-    // 3) Emniyet: MutationObserver ile #btnSearch/#q görünene kadar bekle
-    const obs = new MutationObserver(() => {
-      if (bindHeaderSearch()) obs.disconnect();
-    });
+    const obs = new MutationObserver(() => { if (bindHeaderSearch()) obs.disconnect(); });
     obs.observe(document.body, { childList: true, subtree: true });
-
-    // 4) Zaman aşımı: sonsuza kadar bekleme
     setTimeout(() => obs.disconnect(), MAX_WAIT_MS);
   });
 })();

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Kayıt Ol</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+  <main class="container section">
+    <h1>Kayıt</h1>
+    <form id="f">
+      <label>Email<input type="email" name="email" required></label>
+      <label>Şifre<input type="password" name="password" required></label>
+      <label>İsim Soyad<input type="text" name="full_name" required></label>
+      <button class="btn primary" type="submit">Kayıt Ol</button>
+    </form>
+    <p>Hesabın var mı? <a href="/login.html">Giriş yap</a></p>
+  </main>
+
+  <div data-include="partials/footer.html"></div>
+
+  <script src="js/partials.js"></script>
+  <script src="js/auth.js"></script>
+  <script>includePartials();</script>
+</body>
+</html>
