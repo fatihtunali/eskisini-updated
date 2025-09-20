@@ -1,0 +1,198 @@
+:root{
+  --bg:#fff; --fg:#0f172a; --muted:#6b7280; --line:#e5e7eb; --card:#f8fafc;
+  --radius:14px; --shadow:0 8px 30px rgba(2,6,23,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0; padding:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui; overflow-x:clip}
+
+/* ---------- Layout helpers ---------- */
+.container{max-width:1100px; margin:0 auto; padding:0 16px}
+.section{margin:42px 0}
+.center{text-align:center}
+.tiny{font-size:.85rem}
+.muted{color:var(--muted)}
+
+/* ---------- Header (tek sürüm, STICKY) ---------- */
+.hdr{
+  position:sticky; top:0;
+  background:#fff; border-bottom:1px solid var(--line); z-index:10;
+}
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 0; /* genişliği .container yönetiyor */
+}
+.logo{display:flex; align-items:center; gap:10px; font-weight:700; color:inherit; text-decoration:none}
+.search{flex:1; display:flex; gap:8px; margin:0 16px}
+.search input{flex:1; padding:10px 12px; border:1px solid var(--line); border-radius:10px}
+.search button{padding:10px 14px; border-radius:10px; border:1px solid var(--line); background:#fff; cursor:pointer}
+.usernav{display:flex; gap:10px; align-items:center}
+.btn-ghost{border:1px solid var(--line); padding:8px 12px; border-radius:10px; background:#fff}
+.badge-verified{font-size:.85rem; padding:6px 10px; border-radius:999px; background:#e6fbea; border:1px solid #bbf7d0; color:#166534}
+
+/* ---------- Hero (boxed & bleed) ---------- */
+.hero{
+  position:relative; min-height:50vh;
+  display:grid; place-items:center;
+  border-bottom:1px solid var(--line); overflow:clip;
+}
+.hero .hero-content{color:#fff; text-align:center; padding:24px 16px}
+.hero .hero-content h1{margin:0 0 10px; font-size:clamp(28px,6vw,56px); font-weight:800; text-shadow:0 2px 18px rgba(0,0,0,.35)}
+.hero .hero-content p{margin:0; font-size:clamp(16px,2.6vw,22px); text-shadow:0 1px 12px rgba(0,0,0,.35)}
+
+/* ---------- Hero (boxed & bleed) ---------- */
+.hero{
+  position:relative; min-height:50vh;
+  display:grid; place-items:center;
+  border-bottom:1px solid var(--line); overflow:clip;
+}
+.hero .hero-content{color:#fff; text-align:center; padding:24px 16px}
+.hero .hero-content h1{margin:0 0 10px; font-size:clamp(28px,6vw,56px); font-weight:800; text-shadow:0 2px 18px rgba(0,0,0,.35)}
+.hero .hero-content p{margin:0; font-size:clamp(16px,2.6vw,22px); text-shadow:0 1px 12px rgba(0,0,0,.35)}
+
+/* Boxed (container genişliğinde arka plan kullanmak istersen) */
+.hero--boxed{
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35)),
+    url('/assets/hero.jpg') center/cover no-repeat;
+}
+
+/* Full-bleed (arka plan tüm viewport’ta, içerik layoutu taşmaz) */
+.hero--bleed::before{
+  content:"";
+  position:absolute; inset:0;
+  left:50%; transform:translateX(-50%);
+  width:100vw; height:100%;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35)),
+    url('/assets/hero.jpg') center/cover no-repeat;  /* tek gerçek kural */
+  z-index:-1;
+}
+
+/* ---------- Grid ---------- */
+.grid{display:grid; gap:16px}
+
+/* 5’li alan: sabit genişlikli, daima ortalı */
+.grid.five{
+  grid-template-columns: repeat(auto-fit, 220px);
+  justify-content: center;   /* kolon grubunu ortaya al */
+  justify-items: stretch;    /* her kart track’e otursun */
+}
+
+/* 2 sütunluk layout (paneller için) */
+.grid.two{
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+@media (max-width: 900px){ .grid.two{ grid-template-columns: 1fr } }
+
+/* ---------- Kartlar ---------- */
+.card, .product, .catcard{
+  width:220px;  /* five gridindeki track genişliği ile birebir */
+  background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:14px; position:relative;
+}
+.product img{width:100%; height:180px; object-fit:cover; display:block; border-radius:10px; background:#eef2f7}
+.p-meta{display:flex; justify-content:space-between; align-items:center; margin:4px 0 6px}
+.p-price{font-weight:700}
+.p-title{font-weight:600}
+.c-title{font-weight:700; margin-bottom:2px}
+.c-sub{font-size:.9rem; color:var(--muted)}
+.flag{position:absolute; left:14px; top:14px; background:#fff8eb; border:1px solid #fde68a; color:#92400e; font-size:.8rem; padding:4px 8px; border-radius:8px}
+
+/* ---------- Pricing ---------- */
+.pricing{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.pricecard{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow);position:relative}
+.pricecard h3{margin:6px 0 8px}
+.price{font-size:2rem;font-weight:800;margin:6px 0 14px}
+.price .period{font-size:1rem;font-weight:500;color:var(--muted);margin-left:4px}
+.chip{position:absolute;left:16px;top:14px;font-size:.8rem;padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:#f8fafc}
+
+/* ---------- Paneller ---------- */
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.panel-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.dot{width:8px;height:8px;border-radius:50%;background:#e5e7eb}
+.avatar{width:34px;height:34px;border-radius:50%;background:#eef2f7;color:#334155;font-weight:700;display:grid;place-items:center}
+.form{padding:14px}
+.form label{display:block;font-size:.9rem;margin:10px 0}
+.form input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-top:6px}
+.tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.tab{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:.85rem}
+.tab.active{background:#eefcf3;border-color:#bbf7d0;color:#166534}
+.chat{padding:14px;height:240px;overflow:auto;background:#f8fafc}
+.bubble{max-width:70%;background:#fff;border:1px solid var(--line);padding:10px 12px;border-radius:12px;margin:6px 0}
+.bubble .time{display:block;font-size:.75rem;color:var(--muted);margin-top:4px}
+.bubble.me{margin-left:auto;background:#ecfeff;border-color:#bae6fd}
+.chat-input{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+.chat-input input{flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+
+/* ---------- Footer ---------- */
+.footer{border-top:1px solid var(--line); padding:22px 0; background:#f8fafc; margin-top:40px}
+
+/* ---------- Skeleton (aynı hizayı kullanır) ---------- */
+.grid.five.skeleton-on{
+  grid-template-columns: repeat(auto-fit, 220px);
+  justify-content: center; justify-items: center; gap: 16px;
+}
+.skeleton-on .skel.card{
+  width:220px; min-height:230px;
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:12px;
+}
+.skel{position:relative;overflow:hidden}
+.skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:skel-shimmer 1.2s infinite}
+@keyframes skel-shimmer{100%{transform:translateX(100%)}}
+.skel.media{height:140px;border-radius:10px;background:#e9edf3;margin-bottom:10px}
+.skel.avatar{width:48px;height:48px;border-radius:10px;background:#e9edf3;margin-bottom:10px}
+.skel.line{height:12px;border-radius:6px;background:#e9edf3;margin:8px 0}
+.skel.line.w80{width:80%}.skel.line.w70{width:70%}.skel.line.w60{width:60%}.skel.line.w40{width:40%}
+
+/* 1) Header izole + sabit genişlik merkeziyet */
+.hdr > .container,
+.hdr > .hdr-wrap { max-width:1100px; margin:0 auto; }
+
+/* 2) Grid’i zorla ortaya al (diğer css'ler ezse bile) */
+.container > .grid.five {
+  display:grid !important;
+  grid-template-columns: repeat(auto-fit, 220px) !important;
+  justify-content: center !important;
+  justify-items: stretch !important;
+  gap:16px !important;
+}
+.card, .product, .catcard { width:220px !important; box-sizing:border-box; }
+
+/* Geçici debug – container sınırlarını göster */
+.container { outline:2px dashed rgba(14,165,233,.35); outline-offset:4px; }
+
+/* ============ TEK NOKTADAN MERKEZLEME ============ */
+/* Tüm sayfa için tek kaynak genişlik ve padding */
+:root{
+  --wrap: 1100px;  /* sayfanın içerik genişliği */
+  --pad : 16px;    /* yan boşluk */
+}
+
+/* Header içindeki container ve sayfadaki tüm .container'lar aynı kuralı kullansın */
+.hdr > .container,
+.hdr > .hdr-wrap,
+.container,
+section.container,
+main.container,
+footer .container {
+  max-width: var(--wrap);
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--pad);
+  padding-right: var(--pad);
+  box-sizing: border-box;
+}
+
+.hero { position:relative; isolation:isolate; } /* yeni: isolation kritiktir */
+.hero--bleed::before{
+  content:"";
+  position:absolute; inset:0;
+  z-index:-1;                 /* arka plana at */
+  left:50%; transform:translateX(-50%);
+  width:100vw; height:100%;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35)),
+    url('/assets/hero.jpg') center/cover no-repeat;
+}

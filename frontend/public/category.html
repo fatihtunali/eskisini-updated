@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Kategoriler | Eskisini Ver Yenisini Al</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div data-include="partials/header.html"></div>
+
+<!-- HERO (opsiyonel, sade başlık) -->
+<section class="hero hero--bleed">
+  <div class="hero-content container">
+    <h1 id="title">Kategoriler</h1>
+    <p class="muted">Aradığını bul, eskisini ver yenisini al</p>
+  </div>
+</section>
+
+<main class="container section">
+  <!-- Alt kategori çipleri -->
+  <div id="chips" class="center" style="margin-bottom:16px;"></div>
+
+  <!-- Ana/Alt kategoriler -->
+  <h2 class="center">Kategorileri Keşfedin</h2>
+  <div id="cats" class="grid five"></div>
+
+  <!-- İlanlar -->
+  <h2 id="hListings" class="center" style="display:none;margin-top:42px;">İlanlar</h2>
+  <div id="listings" class="grid five"></div>
+</main>
+
+<div data-include="partials/footer.html"></div>
+
+<!-- JS -->
+<script src="js/partials.js"></script>
+<script src="js/header.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/category.js"></script>
+</body>
+</html>

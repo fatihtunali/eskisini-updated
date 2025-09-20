@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>İlan | Eskisini Ver Yenisini Al</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div data-include="partials/header.html"></div>
+
+<section class="hero hero--bleed">
+  <div class="hero-content container">
+    <h1 id="hTitle">İlan</h1>
+    <p class="muted">Güvenli alışveriş ve takas</p>
+  </div>
+</section>
+
+<main class="container section">
+  <div id="detail"></div>
+  <div class="actions" style="display:flex; gap:10px; margin-top:12px;">
+    <button id="btnBuy"   class="btn primary">Satın Al</button>
+    <button id="btnMsg"   class="btn">Mesaj Gönder</button>
+    <button id="btnTrade" class="btn">Takas Öner</button>
+    <button id="btnFav"   class="btn-ghost">Favori</button>
+  </div>
+</main>
+
+<div data-include="partials/footer.html"></div>
+
+<!-- JS -->
+<script src="js/partials.js"></script>
+<script src="js/header.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/listing.js"></script>
+</body>
+</html>

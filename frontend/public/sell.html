@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>İlan Ver</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div data-include="partials/header.html"></div>
+
+<main class="container section">
+  <h1 class="center">Yeni İlan</h1>
+  <form id="f">
+    <input name="seller_id" value="1" placeholder="Satıcı ID" required>
+    <input name="category_slug" placeholder="Kategori slug (örn: akilli-telefonlar)" required>
+    <input name="title" placeholder="Başlık" required>
+    <input name="slug" placeholder="URL slugu" required>
+    <textarea name="description_md" placeholder="Açıklama"></textarea>
+    <input name="price_minor" type="number" placeholder="Fiyat (kuruş)" required>
+    <input name="currency" value="TRY">
+    <input name="condition_grade" value="good">
+    <input name="location_city" placeholder="Şehir">
+    <input name="image_urls" placeholder="Görsel URL'leri (virgülle)">
+    <button>Kaydet</button>
+  </form>
+</main>
+
+<div data-include="partials/footer.html"></div>
+
+<script src="js/partials.js"></script>
+<script src="js/header.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/sell.js"></script>
+</body>
+</html>

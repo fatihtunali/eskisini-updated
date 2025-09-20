@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Eskisini Ver Yenisini Al</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- HEADER PARTIAL -->
+<div data-include="partials/header.html"></div>
+
+<!-- HERO: full-bleed arka plan + container içerik -->
+<section class="hero hero--bleed">
+  <div class="hero-content container">
+    <h1>Eskisini Ver Yenisini Al</h1>
+    <p>Türkiye'nin en güvenilir alışveriş platformu</p>
+  </div>
+</section>
+
+
+<!-- ÖNE ÇIKANLAR -->
+<section class="container section">
+  <h2 class="center">Öne Çıkanlar</h2>
+  <div id="featured" class="grid five"></div>
+</section>
+
+<!-- KATEGORİLER -->
+<section class="container section">
+  <h2 class="center">Kategorileri Keşfedin</h2>
+  <p class="sub center">Aradığınız ürünü kolayca bulun</p>
+  <div id="cats" class="grid five"></div>
+</section>
+
+<!-- FİYATLANDIRMA -->
+<section class="container section">
+  <h2 class="center">Basit ve Şeffaf Fiyatlandırma</h2>
+  <p class="sub center">İhtiyacınıza uygun paketi seçin. İstediğiniz zaman değiştirebilirsiniz.</p>
+
+  <div class="grid pricing">
+    <article class="pricecard price-free">
+      <div class="chip success">Mevcut Paket</div>
+      <h3>Bireysel Ücretsiz</h3>
+      <div class="price">Ücretsiz</div>
+      <ul class="plist">
+        <li>Ayda 5 takas hakkı</li>
+        <li>30 gün yayında kalma</li>
+        <li>Temel mesajlaşma</li>
+        <li>Fotoğraf yükleme</li>
+        <li>Takas önerileri</li>
+      </ul>
+      <button class="btn disabled">Mevcut Paket</button>
+    </article>
+
+    <article class="pricecard price-pro">
+      <div class="chip info">En Popüler</div>
+      <h3>Pro Aylık</h3>
+      <div class="price"><span class="currency">₺</span>99<span class="period">/aylık</span></div>
+      <ul class="plist">
+        <li>Sınırsız takas</li>
+        <li>Öncelikli destek</li>
+        <li>Gelişmiş istatistikler</li>
+        <li>Onaylı takas rozeti</li>
+        <li>Video yükleme, otomatik yenileme</li>
+      </ul>
+      <button class="btn primary">Paketi Seç</button>
+    </article>
+
+    <article class="pricecard price-boost">
+      <h3>Öne Çıkar</h3>
+      <div class="price"><span class="currency">₺</span>15<span class="period">/günlük</span></div>
+      <ul class="plist">
+        <li>Ana sayfa gösterimi</li>
+        <li>Kategori üstü listeleme</li>
+        <li>Özel görseller</li>
+        <li>Artırılmış görüntülenme</li>
+        <li>Hızlı takas garantisi</li>
+      </ul>
+      <button class="btn">Paketi Seç</button>
+    </article>
+  </div>
+
+  <p class="muted center small">Tüm paketlerde KYC doğrulama ve moderasyon hizmeti dahildir.</p>
+</section>
+
+<!-- PLATFORM ÖZELLİKLERİ (demo paneller) -->
+<section class="container section">
+  <h2 class="center">Platform Özellikleri</h2>
+ <div class="grid two">
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <span>KYC Doğrulama</span>
+      </div>
+      <div class="form">
+        <div class="tabs">
+          <button class="tab active">Kişisel Bilgiler</button>
+          <button class="tab">Kimlik Belgesi</button>
+          <button class="tab">Selfie Kontrolü</button>
+          <button class="tab">Onay</button>
+        </div>
+        <label>Ad<input placeholder="Adınız"></label>
+        <label>Soyad<input placeholder="Soyadınız"></label>
+        <label>TC Kimlik No<input placeholder="12345678901"></label>
+        <label>Telefon<input placeholder="+90 555 123 45 67"></label>
+        <button class="btn disabled full">Devam Et</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="avatar">A</div>
+        <div>
+          <div class="bold">Ayşe Demir <span class="star">★ 4.9</span></div>
+          <div class="muted small">iPhone 15 Pro Max 256GB</div>
+        </div>
+      </div>
+      <div class="chat">
+        <div class="bubble">Merhaba, ilan hakkında bilgi alabilir miyim?<span class="time">13:30</span></div>
+        <div class="bubble me">Tabii ki! Nasıl yardımcı olabilirim?<span class="time">13:32</span></div>
+      </div>
+      <div class="chat-input">
+        <input placeholder="Mesajınızı yazın...">
+        <button class="btn">Gönder</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER PARTIAL -->
+<div data-include="partials/footer.html"></div>
+
+<!-- JS (tamamı harici) -->
+<script src="js/partials.js"></script>
+<script src="js/header.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/home.js"></script>
+</body>
+</html>
