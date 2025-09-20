@@ -1,6 +1,22 @@
-<footer class="footer">
+<footer class="footer" role="contentinfo">
   <div class="container center">
-    <div class="muted small">© 2024 Eskisini Ver Yenisini Al. Tüm hakları saklıdır.</div>
+    <nav class="tiny" aria-label="Alt menü" style="margin-bottom:6px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap">
+      <a href="/about.html" class="muted tiny">Hakkımızda</a>
+      <a href="/privacy.html" class="muted tiny">Gizlilik & KVKK</a>
+      <a href="/terms.html" class="muted tiny">Kullanım Şartları</a>
+      <a href="/contact.html" class="muted tiny">İletişim</a>
+    </nav>
+
+    <div class="muted small">
+      © <span id="yCopy"></span> Eskisini Ver Yenisini Al. Tüm hakları saklıdır.
+    </div>
     <div class="muted tiny">Güvenli takas için KYC doğrulamalı platform</div>
   </div>
 </footer>
+<script>
+  // yılı otomatik bas
+  (function(){
+    var el = document.getElementById('yCopy');
+    if (el) el.textContent = new Date().getFullYear();
+  })();
+</script>

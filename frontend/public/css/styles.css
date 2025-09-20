@@ -1,26 +1,34 @@
 :root{
   --bg:#fff; --fg:#0f172a; --muted:#6b7280; --line:#e5e7eb; --card:#f8fafc;
+  --card-strong:#f3f4f6; /* eksik olan değişken eklendi */
   --radius:14px; --shadow:0 8px 30px rgba(2,6,23,.06);
+  --wrap:1100px; --pad:16px; /* tek merkezleme kaynağı */
 }
+
 *{box-sizing:border-box}
 html,body{margin:0; padding:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui; overflow-x:clip}
 
 /* ---------- Layout helpers ---------- */
-.container{max-width:1100px; margin:0 auto; padding:0 16px}
+.container,
+.hdr > .container,
+.hdr > .hdr-wrap,
+section.container,
+main.container,
+footer .container {
+  max-width: var(--wrap);
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--pad);
+  box-sizing: border-box;
+}
 .section{margin:42px 0}
 .center{text-align:center}
 .tiny{font-size:.85rem}
 .muted{color:var(--muted)}
 
-/* ---------- Header (tek sürüm, STICKY) ---------- */
-.hdr{
-  position:sticky; top:0;
-  background:#fff; border-bottom:1px solid var(--line); z-index:10;
-}
-.topbar{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:12px 0; /* genişliği .container yönetiyor */
-}
+/* ---------- Header (sticky) ---------- */
+.hdr{ position:sticky; top:0; background:#fff; border-bottom:1px solid var(--line); z-index:10; }
+.topbar{ display:flex; align-items:center; justify-content:space-between; padding:12px 0; }
 .logo{display:flex; align-items:center; gap:10px; font-weight:700; color:inherit; text-decoration:none}
 .search{flex:1; display:flex; gap:8px; margin:0 16px}
 .search input{flex:1; padding:10px 12px; border:1px solid var(--line); border-radius:10px}
@@ -29,65 +37,42 @@ html,body{margin:0; padding:0; background:var(--bg); color:var(--fg); font:16px/
 .btn-ghost{border:1px solid var(--line); padding:8px 12px; border-radius:10px; background:#fff}
 .badge-verified{font-size:.85rem; padding:6px 10px; border-radius:999px; background:#e6fbea; border:1px solid #bbf7d0; color:#166534}
 
-/* ---------- Hero (boxed & bleed) ---------- */
+/* ---------- Hero (boxed & bleed, tek tanım) ---------- */
 .hero{
-  position:relative; min-height:50vh;
-  display:grid; place-items:center;
-  border-bottom:1px solid var(--line); overflow:clip;
+  position:relative; isolation:isolate; min-height:50vh;
+  display:grid; place-items:center; border-bottom:1px solid var(--line); overflow:clip;
 }
 .hero .hero-content{color:#fff; text-align:center; padding:24px 16px}
 .hero .hero-content h1{margin:0 0 10px; font-size:clamp(28px,6vw,56px); font-weight:800; text-shadow:0 2px 18px rgba(0,0,0,.35)}
 .hero .hero-content p{margin:0; font-size:clamp(16px,2.6vw,22px); text-shadow:0 1px 12px rgba(0,0,0,.35)}
-
-/* ---------- Hero (boxed & bleed) ---------- */
-.hero{
-  position:relative; min-height:50vh;
-  display:grid; place-items:center;
-  border-bottom:1px solid var(--line); overflow:clip;
-}
-.hero .hero-content{color:#fff; text-align:center; padding:24px 16px}
-.hero .hero-content h1{margin:0 0 10px; font-size:clamp(28px,6vw,56px); font-weight:800; text-shadow:0 2px 18px rgba(0,0,0,.35)}
-.hero .hero-content p{margin:0; font-size:clamp(16px,2.6vw,22px); text-shadow:0 1px 12px rgba(0,0,0,.35)}
-
-/* Boxed (container genişliğinde arka plan kullanmak istersen) */
+/* Boxed */
 .hero--boxed{
   background:
     linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35)),
     url('/assets/hero.jpg') center/cover no-repeat;
 }
-
-/* Full-bleed (arka plan tüm viewport’ta, içerik layoutu taşmaz) */
+/* Bleed */
 .hero--bleed::before{
-  content:"";
-  position:absolute; inset:0;
-  left:50%; transform:translateX(-50%);
-  width:100vw; height:100%;
+  content:""; position:absolute; inset:0; z-index:-1;
+  left:50%; transform:translateX(-50%); width:100vw; height:100%;
   background:
     linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35)),
-    url('/assets/hero.jpg') center/cover no-repeat;  /* tek gerçek kural */
-  z-index:-1;
+    url('/assets/hero.jpg') center/cover no-repeat;
 }
 
 /* ---------- Grid ---------- */
 .grid{display:grid; gap:16px}
-
-/* 5’li alan: sabit genişlikli, daima ortalı */
-.grid.five{
-  grid-template-columns: repeat(auto-fit, 220px);
-  justify-content: center;   /* kolon grubunu ortaya al */
-  justify-items: stretch;    /* her kart track’e otursun */
+/* 5’li alan: sabit kart genişliği (220px), merkezli */
+.grid.five{ grid-template-columns: repeat(auto-fit, 220px); justify-content:center; justify-items:stretch; }
+/* 2/3 kolon düzeni */
+.grid.two{ grid-template-columns: repeat(2, minmax(0, 1fr)); align-items:start; }
+.grid.three{ grid-template-columns: repeat(3, minmax(0, 1fr)); align-items:start; }
+@media (max-width: 900px){
+  .grid.two, .grid.three{ grid-template-columns:1fr; }
 }
 
-/* 2 sütunluk layout (paneller için) */
-.grid.two{
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-}
-@media (max-width: 900px){ .grid.two{ grid-template-columns: 1fr } }
-
-/* ---------- Kartlar ---------- */
+/* ---------- Kartlar / Ürün / Kategori ---------- */
 .card, .product, .catcard{
-  width:220px;  /* five gridindeki track genişliği ile birebir */
   background:#fff; border:1px solid var(--line); border-radius:var(--radius);
   box-shadow:var(--shadow); padding:14px; position:relative;
 }
@@ -100,14 +85,14 @@ html,body{margin:0; padding:0; background:var(--bg); color:var(--fg); font:16px/
 .flag{position:absolute; left:14px; top:14px; background:#fff8eb; border:1px solid #fde68a; color:#92400e; font-size:.8rem; padding:4px 8px; border-radius:8px}
 
 /* ---------- Pricing ---------- */
-.pricing{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.pricing{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 .pricecard{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow);position:relative}
 .pricecard h3{margin:6px 0 8px}
 .price{font-size:2rem;font-weight:800;margin:6px 0 14px}
 .price .period{font-size:1rem;font-weight:500;color:var(--muted);margin-left:4px}
 .chip{position:absolute;left:16px;top:14px;font-size:.8rem;padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:#f8fafc}
 
-/* ---------- Paneller ---------- */
+/* ---------- Paneller / Chat ---------- */
 .panel{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
 .panel-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
 .dot{width:8px;height:8px;border-radius:50%;background:#e5e7eb}
@@ -115,9 +100,9 @@ html,body{margin:0; padding:0; background:var(--bg); color:var(--fg); font:16px/
 .form{padding:14px}
 .form label{display:block;font-size:.9rem;margin:10px 0}
 .form input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-top:6px}
-.tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
-.tab{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:.85rem}
-.tab.active{background:#eefcf3;border-color:#bbf7d0;color:#166534}
+.tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.tabs a{padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:#111827;text-decoration:none}
+.tabs a.active{background:var(--card-strong);font-weight:600}
 .chat{padding:14px;height:240px;overflow:auto;background:#f8fafc}
 .bubble{max-width:70%;background:#fff;border:1px solid var(--line);padding:10px 12px;border-radius:12px;margin:6px 0}
 .bubble .time{display:block;font-size:.75rem;color:var(--muted);margin-top:4px}
@@ -128,71 +113,70 @@ html,body{margin:0; padding:0; background:var(--bg); color:var(--fg); font:16px/
 /* ---------- Footer ---------- */
 .footer{border-top:1px solid var(--line); padding:22px 0; background:#f8fafc; margin-top:40px}
 
-/* ---------- Skeleton (aynı hizayı kullanır) ---------- */
+/* ---------- Skeleton ---------- */
 .grid.five.skeleton-on{
   grid-template-columns: repeat(auto-fit, 220px);
-  justify-content: center; justify-items: center; gap: 16px;
-}
-.skeleton-on .skel.card{
-  width:220px; min-height:230px;
-  background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:12px;
+  justify-content:center; justify-items:center; gap:16px;
 }
 .skel{position:relative;overflow:hidden}
 .skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:skel-shimmer 1.2s infinite}
 @keyframes skel-shimmer{100%{transform:translateX(100%)}}
+.skel.card{min-height:230px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
 .skel.media{height:140px;border-radius:10px;background:#e9edf3;margin-bottom:10px}
 .skel.avatar{width:48px;height:48px;border-radius:10px;background:#e9edf3;margin-bottom:10px}
 .skel.line{height:12px;border-radius:6px;background:#e9edf3;margin:8px 0}
 .skel.line.w80{width:80%}.skel.line.w70{width:70%}.skel.line.w60{width:60%}.skel.line.w40{width:40%}
 
-/* 1) Header izole + sabit genişlik merkeziyet */
-.hdr > .container,
-.hdr > .hdr-wrap { max-width:1100px; margin:0 auto; }
-
-/* 2) Grid’i zorla ortaya al (diğer css'ler ezse bile) */
-.container > .grid.five {
-  display:grid !important;
-  grid-template-columns: repeat(auto-fit, 220px) !important;
-  justify-content: center !important;
-  justify-items: stretch !important;
-  gap:16px !important;
+/* ---------- Auth (login/register) ---------- */
+.auth-wrap{ min-height: calc(100dvh - 220px); display:grid; place-items:center; padding:24px 0; }
+.auth-card{
+  width:100%; max-width:420px; background:#fff; border:1px solid var(--line);
+  border-radius:18px; box-shadow:var(--shadow); padding:22px 18px;
 }
-.card, .product, .catcard { width:220px !important; box-sizing:border-box; }
-
-/* Geçici debug – container sınırlarını göster */
-.container { outline:2px dashed rgba(14,165,233,.35); outline-offset:4px; }
-
-/* ============ TEK NOKTADAN MERKEZLEME ============ */
-/* Tüm sayfa için tek kaynak genişlik ve padding */
-:root{
-  --wrap: 1100px;  /* sayfanın içerik genişliği */
-  --pad : 16px;    /* yan boşluk */
+.auth-title{ margin:4px 0 6px; font-size:1.6rem; font-weight:800; text-align:center; }
+.auth-sub{ margin:0 0 16px; color:var(--muted); text-align:center; }
+.field{ display:block; margin:12px 0; }
+.field > span{ display:block; font-weight:600; margin-bottom:6px; }
+.field input{
+  width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:#fff;
 }
+.field input:focus{ outline:none; border-color:#bae6fd; box-shadow:0 0 0 4px rgba(14,165,233,.12); }
+.hint{ display:block; margin-top:6px; font-size:.85rem; color:var(--muted); }
+.auth-alt{ text-align:center; margin:12px 0 0; }
+.btn.full{ width:100%; }
 
-/* Header içindeki container ve sayfadaki tüm .container'lar aynı kuralı kullansın */
-.hdr > .container,
-.hdr > .hdr-wrap,
-.container,
-section.container,
-main.container,
-footer .container {
-  max-width: var(--wrap);
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: var(--pad);
-  padding-right: var(--pad);
-  box-sizing: border-box;
-}
+/* ---------- User menu (header ile uyumlu) ---------- */
+.user-menu { position: relative; }
+.user-chip { display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--line); border-radius:12px; background:#fff; cursor:pointer; }
+.user-menu .dropdown { position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid var(--line); border-radius:12px; padding:8px; list-style:none; min-width:220px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+.user-menu .dropdown a, .user-menu .dropdown .as-link { display:block; padding:8px 10px; border-radius:8px; color:#111827; text-decoration:none; }
+.user-menu .dropdown a:hover, .user-menu .dropdown .as-link:hover { background:#f3f4f6; }
+.avatar { width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-weight:700; border:1px solid var(--line); }
 
-.hero { position:relative; isolation:isolate; } /* yeni: isolation kritiktir */
-.hero--bleed::before{
-  content:"";
-  position:absolute; inset:0;
-  z-index:-1;                 /* arka plana at */
-  left:50%; transform:translateX(-50%);
-  width:100vw; height:100%;
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35)),
-    url('/assets/hero.jpg') center/cover no-repeat;
-}
+/* ---------- Account ortak ---------- */
+.account-wrap { max-width:980px; margin:0 auto; }
+.account-title { font-size:28px; font-weight:800; margin:8px 0 16px; }
+.account-sub { color:#6b7280; margin-bottom:20px; }
+.section-gap { display:grid; gap:12px; }
+
+/* ---------- Tablo ---------- */
+.table { border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff; }
+.table .t-head, .table .t-row { display:grid; grid-template-columns:80px 1fr 120px 140px; gap:8px; padding:10px 12px; }
+.table .t-head { background:#f9fafb; font-weight:700; border-bottom:1px solid #e5e7eb; }
+.table .t-row  { border-bottom:1px solid #f3f4f6; }
+.table .t-row:last-child { border-bottom:none; }
+
+/* ---------- Boş durum ---------- */
+.empty { border:1px dashed #d1d5db; border-radius:16px; padding:18px; text-align:center; background:#f9fafb; color:#6b7280; }
+
+/* ---------- Buttons ---------- */
+.btn{ display:inline-block; padding:10px 14px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; cursor:pointer; }
+.btn.primary{ background:#111827; color:#fff; border-color:#111827; }
+.btn.ghost{ background:transparent; }
+
+/* ---------- Pager ---------- */
+.pager{ display:flex; gap:8px; align-items:center; justify-content:center; margin-top:14px; }
+.pager button{ padding:8px 12px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; }
+.footer { border-top:1px solid var(--line); padding:18px 0; background:#f8fafc; margin-top:32px }
+.footer a { color: inherit; text-decoration: none; }
+.footer a:hover { text-decoration: underline; }

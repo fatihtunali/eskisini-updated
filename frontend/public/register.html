@@ -6,23 +6,83 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <!-- HEADER -->
   <div data-include="partials/header.html"></div>
 
+  <!-- ORTALANMIŞ KART -->
   <main class="container section">
-    <h1>Kayıt</h1>
-    <form id="f">
-      <label>Email<input type="email" name="email" required></label>
-      <label>Şifre<input type="password" name="password" required></label>
-      <label>İsim Soyad<input type="text" name="full_name" required></label>
-      <button class="btn primary" type="submit">Kayıt Ol</button>
-    </form>
-    <p>Hesabın var mı? <a href="/login.html">Giriş yap</a></p>
+    <div class="auth-wrap">
+      <form id="f" class="auth-card" novalidate data-auth="login">
+        <h1 class="auth-title">Kayıt ol</h1>
+        <p class="auth-sub">Hızlıca hesabını oluştur, güvenle al-sat ve takas yap.</p>
+
+        <div class="grid two" style="gap:12px">
+          <label class="field">
+            <span>İsim Soyad <b>*</b></span>
+            <input type="text" name="full_name" placeholder="Adınız Soyadınız" required>
+            <small class="hint">Profilinizde görünecek ad</small>
+          </label>
+
+          <label class="field">
+            <span>Kullanıcı Adı</span>
+            <input type="text" name="username" placeholder="ornek_kullanici">
+            <small class="hint">En az 3 karakter, benzersiz olmalı</small>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>E-posta <b>*</b></span>
+          <input type="email" name="email" placeholder="ornek@alan.com" required>
+          <small class="hint">Giriş ve bildirimler için kullanılacak</small>
+        </label>
+
+        <div class="grid two" style="gap:12px">
+          <label class="field">
+            <span>Şifre <b>*</b></span>
+            <input type="password" name="password" placeholder="••••••••" minlength="6" required>
+            <small class="hint">En az 6 karakter (harf + rakam önerilir)</small>
+          </label>
+          <label class="field">
+            <span>Şifre (tekrar) <b>*</b></span>
+            <input type="password" name="password2" placeholder="••••••••" minlength="6" required>
+            <small class="hint">Şifre ile aynı olmalı</small>
+          </label>
+        </div>
+
+        <div class="grid two" style="gap:12px">
+          <label class="field">
+            <span>Telefon (E.164)</span>
+            <input type="tel" name="phone_e164" placeholder="+90 5xx xxx xx xx" inputmode="tel">
+            <small class="hint">Örn: +905551112233</small>
+          </label>
+
+          <label class="field">
+            <span>TC Kimlik No (opsiyonel)</span>
+            <input name="tc_no" placeholder="11 hane" pattern="\d{11}">
+            <small class="hint">KYC için hızlandırır (daha sonra da ekleyebilirsiniz)</small>
+          </label>
+        </div>
+
+        <label class="field" style="display:flex; gap:10px; align-items:flex-start">
+          <input type="checkbox" id="cb" required style="margin-top:6px">
+          <span><b>Kullanım Şartları</b> ve <b>Gizlilik</b>’i kabul ediyorum.</span>
+        </label>
+
+        <button class="btn primary full" type="submit">Hesabımı oluştur</button>
+
+        <p class="auth-alt">Zaten üye misin? <a href="/login.html">Giriş yap</a></p>
+      </form>
+    </div>
   </main>
 
+  <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>
 
-  <script src="js/partials.js"></script>
-  <script src="js/auth.js"></script>
-  <script>includePartials();</script>
+<script src="js/partials.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/register.js"></script> <!-- EKLENDİ -->
+<script>includePartials();</script>
+
 </body>
 </html>

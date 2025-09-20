@@ -8,11 +8,18 @@ export function signToken(payload){
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
-export async function authRequired(req, res, next){
+function getTokenFromReq(req){
+  // Önce Authorization: Bearer, sonra cookie: token
   const h = req.headers.authorization;
-  if(!h || !h.startsWith('Bearer ')) return res.status(401).json({ error: 'unauthorized' });
+  if (h && h.startsWith('Bearer ')) return h.slice(7);
+  if (req.cookies && req.cookies.token) return req.cookies.token;
+  return null;
+}
+
+export async function authRequired(req, res, next){
+  const token = getTokenFromReq(req);
+  if(!token) return res.status(401).json({ error: 'unauthorized' });
   try{
-    const token = h.slice(7);
     const data = jwt.verify(token, JWT_SECRET);
     const [rows] = await pool.query(
       `SELECT id, email, full_name, kyc_status, is_kyc_verified

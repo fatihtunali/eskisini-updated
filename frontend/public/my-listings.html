@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>İlanlarım</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+  <main class="container section">
+    <h1>İlanlarım</h1>
+
+    <!-- JS dolduracak -->
+    <div id="listings" class="grid three"></div>
+
+    <div class="pager">
+      <button id="prev">‹ Önceki</button>
+      <span id="pinfo"></span>
+      <button id="next">Sonraki ›</button>
+    </div>
+  </main>
+
+  <div data-include="partials/footer.html"></div>
+
+  <!-- Sıra önemli: partials → header → config → auth → my-listings -->
+  <script src="js/partials.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+
+  <!-- Dosya adı: ya bunu oluşturun ya da my-listings.js’yi bu isimle koyduğunuzdan emin olun -->
+  <script src="js/my-listings.js"></script>
+
+  <script>includePartials();</script>
+</body>
+</html>

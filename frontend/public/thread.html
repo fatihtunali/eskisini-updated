@@ -1,0 +1,83 @@
+<!-- thread.html -->
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mesajlar</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+  <main class="container section">
+    <h1>Konuşma</h1>
+    <div id="msgs" class="chat"></div>
+    <form id="send" class="chat-input" style="margin-top:8px">
+      <input name="body" placeholder="Mesajınızı yazın..." autocomplete="off" required>
+      <button class="btn" type="submit">Gönder</button>
+    </form>
+  </main>
+
+  <div data-include="partials/footer.html"></div>
+
+  <script src="js/partials.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/config.js"></script>
+  <script>
+  (function(){
+    const API=(window.APP&&APP.API_BASE)||'';
+    const qs = new URLSearchParams(location.search);
+    const id = qs.get('id');
+    const box = document.getElementById('msgs');
+    const form = document.getElementById('send');
+
+    document.addEventListener('partials:loaded', ()=>{ if(id) load(); });
+
+    async function load(){
+      box.innerHTML = '<div class="pad">Yükleniyor…</div>';
+      const r = await fetch(`${API}/api/messages/thread/${encodeURIComponent(id)}`, { credentials:'include' });
+      if(!r.ok){ box.innerHTML = '<div class="pad error">Mesajlar yüklenemedi.</div>'; return; }
+      const data = await r.json();
+      const me = await whoami();
+
+      box.innerHTML = (data.messages||[]).map(m=>{
+        const mine = m.sender_id === me?.id;
+        const time = m.created_at ? new Date(m.created_at).toLocaleString('tr-TR') : '';
+        return `<div class="bubble ${mine?'me':''}">
+          ${escapeHTML(m.body||'')}
+          <span class="time">${time}</span>
+        </div>`;
+      }).join('') || '<div class="pad muted">Henüz mesaj yok.</div>';
+
+      box.scrollTop = box.scrollHeight;
+    }
+
+    form?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const body = String(fd.get('body')||'').trim();
+      if (!body) return;
+      const r = await fetch(`${API}/api/messages/thread/${encodeURIComponent(id)}`, {
+        method:'POST',
+        credentials:'include',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body: JSON.stringify({ body })
+      });
+      if (r.ok) {
+        form.reset();
+        await load();
+      }
+    });
+
+    function escapeHTML(s){ return (s??'').toString().replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
+    async function whoami(){
+      try{
+        const r=await fetch(`${API}/api/auth/me`,{credentials:'include',headers:{'Accept':'application/json'}});
+        if(!r.ok) return null; const d=await r.json(); return d.user||d;
+      }catch{ return null; }
+    }
+  })();
+  </script>
+  <script>includePartials();</script>
+</body>
+</html>

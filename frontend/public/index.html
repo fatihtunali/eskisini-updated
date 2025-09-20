@@ -132,11 +132,19 @@
 <!-- FOOTER PARTIAL -->
 <div data-include="partials/footer.html"></div>
 
-<!-- JS (tamamı harici) -->
+<!-- JS: doğru sıra -->
 <script src="js/partials.js"></script>
-<script src="js/header.js"></script>
 <script src="js/config.js"></script>
+<script src="js/ui.js"></script>        <!-- (opsiyonel) küçük UI yardımcıları -->
+<script src="js/auth.js"></script>      <!-- header’ı login durumuna göre hydrate eder -->
+<script src="js/header.js"></script>    <!-- arama kutusu ve event bağlama -->
 <script src="js/api.js"></script>
 <script src="js/home.js"></script>
+
+<script>
+  // Partial'ları yükle; auth/header 'partials:loaded' ile kendini çalıştırır
+  includePartials();
+</script>
+
 </body>
 </html>

@@ -33,11 +33,18 @@
 
 <div data-include="partials/footer.html"></div>
 
-<!-- JS -->
+<!-- JS: doğru sıra -->
 <script src="js/partials.js"></script>
-<script src="js/header.js"></script>
 <script src="js/config.js"></script>
+<script src="js/ui.js"></script>        <!-- opsiyonel ama faydalı -->
+<script src="js/auth.js"></script>      <!-- header’ı hydrate eder -->
+<script src="js/header.js"></script>    <!-- arama kutusu bağlama -->
 <script src="js/api.js"></script>
 <script src="js/category.js"></script>
+
+<script>
+  // partial'ları hemen yükle (auth/header, 'partials:loaded' olayını dinliyor)
+  includePartials();
+</script>
 </body>
 </html>

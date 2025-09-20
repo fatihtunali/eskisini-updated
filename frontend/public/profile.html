@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hesabım</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+<main class="container section account-wrap">
+  <h1 class="account-title">Hesabım</h1>
+  <p class="account-sub">Bilgilerin, siparişlerin ve iletişimlerin bir arada.</p>
+
+  <nav class="tabs" id="tabs">
+    <a href="?tab=overview" data-tab="overview">Özet</a>
+    <a href="?tab=edit" data-tab="edit">Profil Düzenle</a>
+    <a href="?tab=orders" data-tab="orders">Siparişlerim</a>
+  </nav>
+
+  <section id="tab_content" class="section-gap"></section>
+</main>
+
+  <div data-include="partials/footer.html"></div>
+
+  <!-- JS -->
+<script src="js/partials.js"></script>
+<script src="js/header.js"></script> <!-- BUNU EKLE -->
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/profile.js"></script>
+<script>includePartials();</script>
+
+</body>
+</html>

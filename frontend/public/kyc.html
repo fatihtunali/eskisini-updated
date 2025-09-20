@@ -11,19 +11,110 @@
   <main class="container section">
     <h1>KYC Doğrulama</h1>
     <div id="status" class="muted">Durum: —</div>
-    <form id="f">
-      <label>TC Kimlik No (11 hane)
-        <input name="tc_no" required pattern="\d{11}" placeholder="Sadece rakam">
+
+    <form id="f" class="form card pad" novalidate>
+      <label class="field">
+        <span>TC Kimlik No (11 hane)</span>
+        <input name="tc_no" required pattern="\d{11}" inputmode="numeric" placeholder="Sadece rakam">
+        <small class="hint">Sadece format kontrolü yapılır; gerçek doğrulama daha sonra eklenecek.</small>
       </label>
-      <button class="btn primary" type="submit">Gönder</button>
+      <div style="display:flex; gap:8px; align-items:center">
+        <button class="btn primary" type="submit">Gönder</button>
+        <span id="msg" class="muted"></span>
+      </div>
     </form>
-    <p class="tiny muted">Test: yalnızca 11 haneli format kontrolü yapılır. Gerçek doğrulama daha sonra bağlanacak.</p>
   </main>
 
   <div data-include="partials/footer.html"></div>
 
+  <!-- JS: doğru sıra -->
   <script src="js/partials.js"></script>
+  <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
-  <script>includePartials();</script>
+  <script src="js/header.js"></script>
+  <script>
+  (function(){
+    const API = (window.APP && window.APP.API_BASE) || '';
+    const $ = (s,r=document)=>r.querySelector(s);
+    const esc = s => String(s??'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+
+    function redirectToLogin(){
+      const u = new URL('/login.html', location.origin);
+      u.searchParams.set('redirect', location.pathname + location.search);
+      location.href = u.toString();
+    }
+
+    async function me(){
+      const r = await fetch(`${API}/api/auth/me`, { credentials:'include', headers:{'Accept':'application/json'} });
+      if (r.status === 401) return null;
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      const data = await r.json(); return data.user || data;
+    }
+
+    async function loadStatus(){
+      const s = $('#status');
+      s.textContent = 'Durum: yükleniyor…';
+      const user = await me();
+      if (!user) { redirectToLogin(); return; }
+      s.textContent = 'Durum: ' + (user.kyc_status || 'none');
+    }
+
+    function digitsOnly(e){
+      // input'a sadece rakam yazdır (kullanıcı deneyimi)
+      const tgt = e.target;
+      const v = tgt.value.replace(/\D/g,'');
+      if (tgt.value !== v) tgt.value = v;
+    }
+
+    async function submitKYC(e){
+      e.preventDefault();
+      const form = e.currentTarget;
+      const msg = $('#msg'); msg.textContent = '';
+      const btn = form.querySelector('[type="submit"]');
+      btn.disabled = true;
+
+      const fd = new FormData(form);
+      const tc = String(fd.get('tc_no')||'').replace(/\D/g,'');
+      if (tc.length !== 11) {
+        msg.textContent = 'TC 11 hane olmalı.';
+        btn.disabled = false; return;
+      }
+
+      try{
+        const r = await fetch(`${API}/api/auth/kyc`, {
+          method:'POST',
+          credentials:'include',
+          headers:{'Content-Type':'application/json','Accept':'application/json'},
+          body: JSON.stringify({ tc_no: tc })
+        });
+        if (r.status === 401) { redirectToLogin(); return; }
+        const data = await r.json().catch(()=>({}));
+        if (!r.ok || data.ok===false){
+          msg.textContent = data.reason || data.error || 'Kaydedilemedi';
+          btn.disabled = false; return;
+        }
+        msg.textContent = 'Gönderildi ✓ (durum: ' + (data.kyc_status || 'pending') + ')';
+        // Header’daki KYC rozeti yenilensin
+        document.dispatchEvent(new Event('auth:login'));
+        // Mevcut sayfadaki durum metnini de güncelle
+        await loadStatus();
+      } catch(err){
+        msg.textContent = 'Ağ hatası, tekrar deneyin.';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.addEventListener('partials:loaded', ()=>{
+      loadStatus();
+      const f = $('#f');
+      f.addEventListener('submit', submitKYC);
+      f.tc_no.addEventListener('input', digitsOnly);
+    });
+
+    // partial'ları başlat
+    if (typeof includePartials === 'function') includePartials();
+  })();
+  </script>
 </body>
 </html>

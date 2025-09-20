@@ -3,16 +3,47 @@
   const MAX_WAIT_MS = 8000;
 
   function bindHeaderSearch(root = document) {
-    const btn = root.getElementById ? root.getElementById('btnSearch') : document.getElementById('btnSearch');
-    const inp = root.getElementById ? root.getElementById('q')         : document.getElementById('q');
+    const get = root.getElementById ? root.getElementById.bind(root) : document.getElementById.bind(document);
+    const btn = get('btnSearch');
+    const inp = get('q');
+
     if (!inp) return false;
+
+    // ARIA / rol ipucu
+    try {
+      const searchWrap = inp.closest('.search');
+      if (searchWrap && !searchWrap.getAttribute('role')) searchWrap.setAttribute('role', 'search');
+      if (!inp.getAttribute('aria-label') && !inp.getAttribute('placeholder')) {
+        inp.setAttribute('aria-label', 'Ara');
+      }
+    } catch(_) {}
 
     const go = () => {
       const q = (inp.value || '').trim();
-      const u = new URL('/category.html', location.origin);
+      // Alt dizinlerde de çalışsın:
+      const u = new URL('category.html', location.href);
+
+      // Mevcut parametreleri (utm, lang, vs.) taşıyalım:
+      const curr = new URL(location.href);
+      curr.searchParams.forEach((v, k) => {
+        if (!['q'].includes(k)) u.searchParams.set(k, v);
+      });
+
       if (q) u.searchParams.set('q', q);
-      location.href = u.toString();
+      // Aynı sayfadaysak sadece parametreyi güncelle:
+      if (location.pathname.endsWith('/category.html') && location.search !== u.search) {
+        location.search = u.search;
+      } else {
+        location.href = u.toString();
+      }
     };
+
+    // Form submit desteği (ileride <form> olursa)
+    const form = inp.closest('form');
+    if (form && !form.dataset.bound) {
+      form.addEventListener('submit', (e) => { e.preventDefault(); go(); });
+      form.dataset.bound = '1';
+    }
 
     if (btn && !btn.dataset.bound) {
       btn.addEventListener('click', go);
@@ -27,6 +58,22 @@
       });
       inp.dataset.bound = '1';
     }
+
+    // Küçük UX: "/" ile aramaya odaklan
+    if (!document.body.dataset.searchHotkey) {
+      document.addEventListener('keydown', (e) => {
+        if (
+          e.key === '/' &&
+          !e.altKey && !e.ctrlKey && !e.metaKey &&
+          document.activeElement !== inp
+        ) {
+          e.preventDefault();
+          inp.focus();
+        }
+      });
+      document.body.dataset.searchHotkey = '1';
+    }
+
     return true;
   }
 

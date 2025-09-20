@@ -1,8 +1,7 @@
 <!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>İlan Ver</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -12,27 +11,97 @@
 
 <main class="container section">
   <h1 class="center">Yeni İlan</h1>
-  <form id="f">
-    <input name="seller_id" value="1" placeholder="Satıcı ID" required>
-    <input name="category_slug" placeholder="Kategori slug (örn: akilli-telefonlar)" required>
-    <input name="title" placeholder="Başlık" required>
-    <input name="slug" placeholder="URL slugu" required>
-    <textarea name="description_md" placeholder="Açıklama"></textarea>
-    <input name="price_minor" type="number" placeholder="Fiyat (kuruş)" required>
-    <input name="currency" value="TRY">
-    <input name="condition_grade" value="good">
-    <input name="location_city" placeholder="Şehir">
-    <input name="image_urls" placeholder="Görsel URL'leri (virgülle)">
-    <button>Kaydet</button>
+
+  <form id="f" class="card pad form" novalidate>
+    <!-- KATEGORİ SEÇİMİ -->
+    <div class="grid two">
+      <label class="field">
+        <span>Ana Kategori <b>*</b></span>
+        <select id="catMain" required>
+          <option value="">Seçiniz…</option>
+          <!-- JS dolduracak -->
+          <option value="__other">Diğer / Elle gir</option>
+        </select>
+        <small class="hint">Önce ana kategoriyi seçin</small>
+      </label>
+
+      <label class="field">
+        <span>Alt Kategori</span>
+        <select id="catChild" disabled>
+          <option value="">Önce ana kategoriyi seçin</option>
+        </select>
+        <small class="hint">Varsa alt kategori seçin</small>
+      </label>
+    </div>
+
+    <!-- Elle slug (yedek) -->
+    <label class="field" id="customSlugWrap" style="display:none">
+      <span>Kategori Slug (elle)</span>
+      <input id="customSlug" placeholder="örn: akilli-telefonlar">
+      <small class="hint">Listede yoksa buraya slug yazabilirsiniz</small>
+    </label>
+
+    <label class="field">
+      <span>Başlık <b>*</b></span>
+      <input name="title" placeholder="İlan başlığı" required>
+    </label>
+
+    <label class="field">
+      <span>URL Slug (opsiyonel)</span>
+      <input name="slug" placeholder="Boş bırakılırsa otomatik oluşturulur">
+    </label>
+
+    <label class="field">
+      <span>Açıklama</span>
+      <textarea name="description_md" rows="5" placeholder="Ürünün durumunu, aksesuarlarını vb. belirtin"></textarea>
+    </label>
+
+    <div class="grid two">
+      <label class="field">
+        <span>Fiyat (TL) <b>*</b></span>
+        <input name="price" placeholder="Örn: 12.499 veya 12.499,90" required>
+        <small class="hint">Noktayı binlik, virgülü kuruş için kullanabilirsiniz</small>
+      </label>
+
+      <label class="field">
+        <span>Para Birimi</span>
+        <input name="currency" value="TRY">
+      </label>
+    </div>
+
+    <div class="grid two">
+      <label class="field">
+        <span>Ürün Durumu</span>
+        <input name="condition_grade" value="good">
+      </label>
+
+      <label class="field">
+        <span>Şehir</span>
+        <input name="location_city" placeholder="Örn: İstanbul">
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Görsel URL'leri</span>
+      <textarea name="image_urls" rows="3" placeholder="Her satıra bir URL veya virgülle ayırın"></textarea>
+      <small class="hint">İlk görsel kapak olarak kullanılır</small>
+    </label>
+
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button class="btn primary" type="submit">Kaydet</button>
+      <span id="msg" class="muted"></span>
+    </div>
   </form>
 </main>
 
 <div data-include="partials/footer.html"></div>
 
+<!-- JS -->
 <script src="js/partials.js"></script>
 <script src="js/header.js"></script>
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/sell.js"></script>
+<script>includePartials();</script>
 </body>
 </html>

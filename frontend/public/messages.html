@@ -1,0 +1,56 @@
+<!-- messages.html -->
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mesajlarım</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+  <main class="container section">
+    <h1>Mesajlarım</h1>
+    <div id="threads" class="list"></div>
+  </main>
+
+  <div data-include="partials/footer.html"></div>
+
+  <script src="js/partials.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  (function(){
+    const API=(window.APP&&APP.API_BASE)||'';
+    const root=document.getElementById('threads');
+
+    document.addEventListener('partials:loaded', load);
+
+    async function load(){
+      root.innerHTML='<div class="pad">Yükleniyor…</div>';
+      const r=await fetch(`${API}/api/messages/threads`,{credentials:'include'});
+      if(!r.ok){ root.innerHTML='<div class="pad error">Mesajlar alınamadı.</div>'; return; }
+
+      const data=await r.json();
+      const list=data.threads||[];
+      if(!list.length){
+        root.innerHTML='<div class="empty">Henüz mesajınız yok.</div>';
+        return;
+      }
+      root.innerHTML=list.map(t=>{
+        const prev = t.last_message_preview || '—';
+        const when = t.updated_at ? new Date(t.updated_at).toLocaleString('tr-TR') : '';
+        return `
+          <a class="item" href="/thread.html?id=${encodeURIComponent(t.id)}">
+            <div><b>${t.other_user_name||'Kullanıcı'}</b></div>
+            <div class="muted">${prev}</div>
+            <div class="muted small">${when}</div>
+          </a>`;
+      }).join('');
+    }
+  })();
+  </script>
+  <script>includePartials();</script>
+</body>
+</html>

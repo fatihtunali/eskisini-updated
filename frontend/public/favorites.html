@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Favorilerim | Eskisini Ver Yenisini Al</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+  <main class="container section">
+    <h1>Favorilerim</h1>
+    <div id="favlist" class="grid three"></div>
+  </main>
+
+  <div data-include="partials/footer.html"></div>
+
+  <!-- JS (doğru sıra) -->
+  <script src="js/partials.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/ui.js"></script>     <!-- opsiyonel ama faydalı -->
+  <script src="js/auth.js"></script>
+  <script src="js/header.js"></script>
+
+  <script>
+  (function(){
+    const API = (window.APP && APP.API_BASE) || '';
+    const $   = (s,r=document)=>r.querySelector(s);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+    function redirectToLogin(){
+      const u = new URL('/login.html', location.origin);
+      u.searchParams.set('redirect', location.pathname + location.search);
+      location.href = u.toString();
+    }
+
+    async function load(){
+      const root = $('#favlist');
+      root.innerHTML = '<div class="pad">Yükleniyor…</div>';
+
+      try{
+        const res = await fetch(`${API}/api/favorites/my`, { credentials:'include', headers:{'Accept':'application/json'} });
+        if (res.status === 401) { redirectToLogin(); return; }
+        if (!res.ok) throw new Error('HTTP '+res.status);
+
+        const data = await res.json();
+        const items = data.items || [];
+
+        if (!items.length) {
+          root.innerHTML = '<div class="empty">Henüz favoriniz yok.</div>';
+          return;
+        }
+
+        root.innerHTML = items.map(x=>{
+          const img = x.thumb_url || '/assets/placeholder.png';
+          const href = x.slug
+            ? `/listing.html?slug=${encodeURIComponent(x.slug)}`
+            : `/listing.html?id=${encodeURIComponent(x.listing_id)}`;
+          const priceStr = typeof x.price_minor === 'number'
+            ? `${(x.price_minor/100).toLocaleString('tr-TR',{maximumFractionDigits:2})} ${esc(x.currency||'TRY')}`
+            : '';
+
+          return `
+            <article class="card">
+              <img src="${img}" alt="">
+              <div class="pad">
+                <h3>${esc(x.title||'')}</h3>
+                ${priceStr ? `<div class="price">${priceStr}</div>` : ''}
+                <a class="btn" href="${href}">Görüntüle</a>
+              </div>
+            </article>`;
+        }).join('');
+      } catch (err) {
+        console.error(err);
+        $('#favlist').innerHTML = '<div class="pad error">Favoriler alınamadı.</div>';
+      }
+    }
+
+    document.addEventListener('partials:loaded', load);
+    window.addEventListener('DOMContentLoaded', function(){
+      if (typeof includePartials === 'function') includePartials();
+      // includePartials sonrası 'partials:loaded' tetiklenecek ve load() çağrılacak.
+    });
+  })();
+  </script>
+</body>
+</html>
