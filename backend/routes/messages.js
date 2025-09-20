@@ -6,22 +6,23 @@ import { authRequired } from '../mw/auth.js';
 const r = Router();
 
 /**
- * Sohbet başlat (aynı ilan + buyer + seller için tek kayıt)
- * body: { listing_id, buyer_id, seller_id, body }
- * buyer_id/seller_id güvenlik için istersen req.user.id’den de türetebilirsin.
+ * Konuşma başlat + ilk mesaj
+ * body: { listing_id, buyer_id?, seller_id, body }
+ * buyer_id gönderilmezse auth’tan alınır.
  */
 r.post('/start', authRequired, async (req, res) => {
   try {
-    let { listing_id, buyer_id, seller_id, body } = req.body || {};
-    listing_id = Number(listing_id);
-    if (!listing_id || !buyer_id || !seller_id || !body) {
-      return res.status(400).json({ ok:false, error:'Eksik' });
+    const { listing_id, seller_id, body } = req.body || {};
+    const buyer_id = req.user?.id || req.body?.buyer_id;
+
+    if (!listing_id || !seller_id || !buyer_id || !body) {
+      return res.status(400).json({ ok: false, error: 'Eksik alan' });
     }
 
-    // Tekil tut (unique key varsa ON DUPLICATE ile güncelle)
+    // konuşmayı (listing_id + buyer + seller) benzersizleştir
     await pool.query(
       `INSERT INTO conversations (listing_id, buyer_id, seller_id, last_msg_at)
-       VALUES (?, ?, ?, NOW())
+       VALUES (?,?,?,NOW())
        ON DUPLICATE KEY UPDATE last_msg_at=NOW()`,
       [listing_id, buyer_id, seller_id]
     );
@@ -31,169 +32,120 @@ r.post('/start', authRequired, async (req, res) => {
       [listing_id, buyer_id, seller_id]
     );
 
-    // İlk mesajı ekle + preview’ı güncelle
+    // ilk mesaj
     await pool.query(
       `INSERT INTO messages (conversation_id, sender_id, body, created_at)
-       VALUES (?, ?, ?, NOW())`,
-      [conv.id, buyer_id, body]
-    );
-    await pool.query(
-      `UPDATE conversations
-          SET last_message_preview = ?, last_msg_at=NOW()
-        WHERE id=?`,
-      [body.slice(0, 200), conv.id]
+       VALUES (?,?,?,NOW())`,
+      [conv.id, buyer_id, String(body).slice(0, 2000)]
     );
 
-    res.json({ ok:true, conversation_id: conv.id });
+    res.json({ ok: true, conversation_id: conv.id });
   } catch (e) {
-    console.error('POST /messages/start', e);
-    res.status(500).json({ ok:false, error:'server_error' });
+    console.error('POST /messages/start error =>', e);
+    res.status(400).json({ ok: false, error: e.message });
   }
 });
 
 /**
- * Sohbet listem (thread list)
- * Dönüş: id, other_user_name, updated_at, last_message_preview
+ * Thread listesi (kullanıcının taraf olduğu konuşmalar)
+ * GET /api/messages/threads
+ * Dönen alanlar: id, other_user_name, updated_at, last_message_preview
  */
 r.get('/threads', authRequired, async (req, res) => {
   try {
-    const myId = req.user.id;
+    const uid = req.user.id;
+    // Son mesajın metnini almak için CONCAT(created_at, '\t', body) hilesi
     const [rows] = await pool.query(
-      `SELECT c.id,
-              CASE
-                WHEN c.buyer_id=? THEN u_seller.full_name
-                ELSE u_buyer.full_name
-              END AS other_user_name,
-              c.last_msg_at      AS updated_at,
-              c.last_message_preview
-         FROM conversations c
-         JOIN users u_buyer  ON u_buyer.id  = c.buyer_id
-         JOIN users u_seller ON u_seller.id = c.seller_id
-        WHERE c.buyer_id=? OR c.seller_id=?
-        ORDER BY c.last_msg_at DESC
-        LIMIT 200`,
-      [myId, myId, myId]
+      `
+      SELECT
+        c.id,
+        CASE WHEN c.buyer_id=? THEN u2.full_name ELSE u1.full_name END AS other_user_name,
+        COALESCE(MAX(m.created_at), c.last_msg_at) AS updated_at,
+        SUBSTRING_INDEX(
+          MAX(CONCAT(IFNULL(m.created_at, c.last_msg_at), '\t', IFNULL(m.body, ''))),
+          '\t', -1
+        ) AS last_message_preview
+      FROM conversations c
+      JOIN users u1 ON u1.id = c.buyer_id
+      JOIN users u2 ON u2.id = c.seller_id
+      LEFT JOIN messages m ON m.conversation_id = c.id
+      WHERE c.buyer_id=? OR c.seller_id=?
+      GROUP BY c.id
+      ORDER BY updated_at DESC
+      LIMIT 200
+      `,
+      [uid, uid, uid]
     );
-    res.json({ ok:true, threads: rows });
+
+    res.json({ threads: rows });
   } catch (e) {
-    console.error('GET /messages/threads', e);
-    res.status(500).json({ ok:false, error:'server_error' });
+    console.error('GET /messages/threads error =>', e);
+    res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
 
 /**
- * Bir sohbetin mesajlarını getir
- * path: /api/messages/thread/:id
- * return: { messages: [{id,sender_id,body,created_at}, ...] }
+ * Bir thread’in mesajlarını getir
+ * GET /api/messages/thread/:id
+ * Kullanıcı konuşmanın tarafı olmalı
  */
 r.get('/thread/:id', authRequired, async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    if (!id) return res.status(400).json({ ok:false, error:'bad_id' });
+    const uid = req.user.id;
+    const convId = Number(req.params.id);
 
-    // Yetki kontrolü: bu konuşmanın tarafı mıyım?
+    // yetki kontrolü: konuşmanın tarafı mı?
     const [[conv]] = await pool.query(
-      `SELECT id, buyer_id, seller_id FROM conversations WHERE id=? LIMIT 1`, [id]
+      `SELECT id FROM conversations WHERE id=? AND (buyer_id=? OR seller_id=?) LIMIT 1`,
+      [convId, uid, uid]
     );
-    if (!conv) return res.status(404).json({ ok:false, error:'not_found' });
-    if (conv.buyer_id !== req.user.id && conv.seller_id !== req.user.id) {
-      return res.status(403).json({ ok:false, error:'forbidden' });
-    }
+    if (!conv) return res.status(403).json({ ok: false, error: 'forbidden' });
 
-    const [msgs] = await pool.query(
+    const [rows] = await pool.query(
       `SELECT id, sender_id, body, created_at
          FROM messages
         WHERE conversation_id=?
         ORDER BY id`,
-      [id]
+      [convId]
     );
-    res.json({ ok:true, messages: msgs });
+
+    res.json({ ok: true, messages: rows });
   } catch (e) {
-    console.error('GET /messages/thread/:id', e);
-    res.status(500).json({ ok:false, error:'server_error' });
+    console.error('GET /messages/thread/:id error =>', e);
+    res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
 
 /**
- * Sohbete yeni mesaj ekle
- * path: /api/messages/thread/:id
+ * Mesaj gönder
+ * POST /api/messages/thread/:id
  * body: { body }
  */
 r.post('/thread/:id', authRequired, async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    const text = (req.body?.body || '').toString().trim();
-    if (!id || !text) return res.status(400).json({ ok:false, error:'bad_request' });
+    const uid = req.user.id;
+    const convId = Number(req.params.id);
+    const text = (req.body?.body ?? '').toString().trim();
+    if (!text) return res.status(400).json({ ok: false, error: 'empty_body' });
 
-    // Yetki kontrolü
     const [[conv]] = await pool.query(
-      `SELECT id, buyer_id, seller_id FROM conversations WHERE id=? LIMIT 1`, [id]
+      `SELECT id FROM conversations WHERE id=? AND (buyer_id=? OR seller_id=?) LIMIT 1`,
+      [convId, uid, uid]
     );
-    if (!conv) return res.status(404).json({ ok:false, error:'not_found' });
-    if (conv.buyer_id !== req.user.id && conv.seller_id !== req.user.id) {
-      return res.status(403).json({ ok:false, error:'forbidden' });
-    }
+    if (!conv) return res.status(403).json({ ok: false, error: 'forbidden' });
 
     await pool.query(
       `INSERT INTO messages (conversation_id, sender_id, body, created_at)
-       VALUES (?, ?, ?, NOW())`,
-      [id, req.user.id, text]
+       VALUES (?,?,?,NOW())`,
+      [convId, uid, text.slice(0, 2000)]
     );
-    await pool.query(
-      `UPDATE conversations
-          SET last_message_preview=?, last_msg_at=NOW()
-        WHERE id=?`,
-      [text.slice(0,200), id]
-    );
+    await pool.query(`UPDATE conversations SET last_msg_at=NOW() WHERE id=?`, [convId]);
 
-    res.json({ ok:true });
+    res.json({ ok: true });
   } catch (e) {
-    console.error('POST /messages/thread/:id', e);
-    res.status(500).json({ ok:false, error:'server_error' });
+    console.error('POST /messages/thread/:id error =>', e);
+    res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
-
-// backend/routes/messages.js (MEVCUTLARA EK)
-// Kullanıcıya ait thread listesi
-import { authRequired } from '../mw/auth.js';
-
-r.get('/threads', authRequired, async (req,res)=>{
-  // Örnek bir “threads” görünümü (uygun şemanızla değiştirin)
-  const [rows] = await pool.query(
-    `SELECT t.id,
-            CASE WHEN t.buyer_id=? THEN u2.full_name ELSE u1.full_name END AS other_user_name,
-            t.updated_at,
-            t.last_message_preview
-       FROM conversations t
-       JOIN users u1 ON u1.id=t.buyer_id
-       JOIN users u2 ON u2.id=t.seller_id
-      WHERE t.buyer_id=? OR t.seller_id=?
-      ORDER BY t.updated_at DESC
-      LIMIT 200`,
-    [req.user.id, req.user.id, req.user.id]
-  );
-  res.json({ threads: rows });
-});
-
-// Thread mesajları: GET /api/messages/thread/:id
-r.get('/thread/:id', authRequired, async (req,res)=>{
-  const { id } = req.params;
-  const [rows] = await pool.query(
-    `SELECT id,sender_id,body,created_at
-       FROM messages WHERE conversation_id=? ORDER BY id`, [id]
-  );
-  res.json({ ok:true, messages: rows });
-});
-
-// Thread’e mesaj gönder: POST /api/messages/thread/:id
-r.post('/thread/:id', authRequired, async (req,res)=>{
-  const { id } = req.params;
-  const body = (req.body?.body||'').toString().trim();
-  if(!body) return res.status(400).json({ok:false,error:'Boş mesaj'});
-  await pool.query('INSERT INTO messages (conversation_id,sender_id,body) VALUES (?,?,?)', [id, req.user.id, body]);
-  await pool.query('UPDATE conversations SET last_msg_at=NOW(), last_message_preview=? WHERE id=?', [body.slice(0,200), id]);
-  res.json({ ok:true });
-});
-
 
 export default r;

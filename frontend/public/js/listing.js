@@ -1,159 +1,179 @@
-// public/js/listing.js
-// Partials bittikten sonra çalış
-window.addEventListener('DOMContentLoaded', () => {
-  if (typeof includePartials === 'function') includePartials();
+// backend/routes/listings.js
+import { Router } from 'express';
+import { pool } from '../db.js';
+import { authRequired } from '../mw/auth.js';
+
+const r = Router();
+
+/** =======================
+ *  ARAMA / LİSTELEME
+ *  GET /api/listings/search?q=&cat=&limit=&offset=
+ *  ======================= */
+r.get('/search', async (req, res) => {
+  const { q = '', cat = '', limit = 24, offset = 0 } = req.query;
+
+  const where = ['l.status="active"'];
+  const params = [];
+  let catJoin = 'JOIN categories c ON c.id = l.category_id';
+
+  // Kategori filtreleme (seçilen + çocukları)
+  if (cat) {
+    const [[catRow]] = await pool.query(
+      'SELECT id FROM categories WHERE slug=? OR name=? LIMIT 1',
+      [cat, cat]
+    );
+    if (catRow) {
+      where.push('l.category_id IN (SELECT id FROM categories WHERE id=? OR parent_id=?)');
+      params.push(catRow.id, catRow.id);
+    } else {
+      // Eşleşme yoksa sadece slug/name eşleşmesi
+      where.push('(c.slug=? OR c.name=?)');
+      params.push(cat, cat);
+    }
+  }
+
+  // Fulltext
+  let matchSql = '';
+  if (q && q.trim()) {
+    matchSql = 'AND MATCH(l.title,l.description_md) AGAINST (? IN BOOLEAN MODE)';
+    params.push(`${q}*`);
+  }
+
+  const sql = `
+    SELECT
+      l.id, l.title, l.slug,
+      l.price_minor, l.currency, l.location_city,
+      (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS cover
+    FROM listings l
+    ${catJoin}
+    ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+    ${matchSql}
+    ORDER BY l.created_at DESC
+    LIMIT ? OFFSET ?`;
+
+  params.push(Number(limit), Number(offset));
+  const [rows] = await pool.query(sql, params);
+  res.json({ ok: true, listings: rows });
 });
 
-document.addEventListener('partials:loaded', bootListing);
 
-// Helpers
-const API_BASE = (window.APP && window.APP.API_BASE) || '';
-const $ = (s,r=document)=>r.querySelector(s);
+/** =======================
+ *  İLANLARIM (AUTH)
+ *  GET /api/listings/my?page=&size=
+ *  ======================= */
+r.get('/my', authRequired, async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page || '1', 10));
+  const size = Math.min(50, Math.max(1, parseInt(req.query.size || '12', 10)));
+  const off  = (page - 1) * size;
 
-async function me(){
-  try{
-    const r = await fetch(`${API_BASE}/api/auth/me`, { credentials:'include', headers:{'Accept':'application/json'} });
-    if (r.status === 401) return null;
-    if (!r.ok) throw new Error('HTTP '+r.status);
-    const data = await r.json();
-    return data.user || data;
-  }catch{ return null; }
-}
-function redirectToLogin(){
-  const u = new URL('/login.html', location.origin);
-  u.searchParams.set('redirect', location.pathname + location.search);
-  location.href = u.toString();
-}
-function attachImgFallback(rootEl) {
-  rootEl.querySelectorAll('img[data-fallback]').forEach(img => {
-    img.addEventListener('error', () => {
-      img.src = 'assets/hero.png';
-      img.removeAttribute('data-fallback');
-    }, { once: true });
-  });
-}
+  const [[{ cnt }]] = await pool.query(
+    `SELECT COUNT(*) cnt FROM listings WHERE seller_id = ?`,
+    [req.user.id]
+  );
 
-async function bootListing(){
-  const slug = new URLSearchParams(location.search).get('slug') || '';
-  if (!slug) return;
+  const [rows] = await pool.query(
+    `SELECT
+        l.id,
+        l.title,
+        l.slug,
+        l.price_minor AS price,             -- frontend eski alanı beklerse uyum için
+        c.name AS category_name,
+        (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS thumb_url,
+        l.created_at
+     FROM listings l
+     JOIN categories c ON c.id = l.category_id
+     WHERE l.seller_id = ?
+     ORDER BY l.id DESC
+     LIMIT ? OFFSET ?`,
+    [req.user.id, size, off]
+  );
 
-  // İlanı getir
-  let listing, images;
+  res.json({ total: cnt, page, size, items: rows });
+});
+
+
+/** =======================
+ *  OLUŞTUR (AUTH)
+ *  POST /api/listings
+ *  Body: { category_slug, title, slug?, description_md?, price_minor, currency?, condition_grade?, location_city?, image_urls?[] }
+ *  ======================= */
+r.post('/', authRequired, async (req, res) => {
   try {
-    const res = await API.getListing(slug);
-    if (!res?.ok) return;
-    listing = res.listing; images = res.images || [];
-  } catch(e){ console.error(e); return; }
+    const seller_id = req.user.id;
+    const {
+      category_slug,
+      title,
+      slug,
+      description_md,
+      price_minor,
+      currency = 'TRY',
+      condition_grade = 'good',
+      location_city,
+      image_urls = []
+    } = req.body || {};
 
-  // Başlık & içerik
-  const h = $('#hTitle'); if (h) h.textContent = listing.title;
-  const detail = $('#detail');
-  const cover = images?.[0]?.file_url || 'assets/hero.jpg';
-  detail.innerHTML = `
-    <h2>${listing.title}</h2>
-    <img class="cover" src="${cover}" alt="${listing.title}" data-fallback style="width:100%;max-width:800px;border-radius:12px">
-    <p style="margin-top:12px">${listing.description_md || ''}</p>
-    <div class="meta muted">
-      <span><strong>${(listing.price_minor/100).toLocaleString('tr-TR')} ${listing.currency}</strong></span>
-      <span> · ${listing.location_city || ''}</span>
-    </div>
-  `;
-  attachImgFallback(detail);
+    if (!seller_id || !category_slug || !title || !price_minor) {
+      return res.status(400).json({ ok: false, error: 'Eksik alan' });
+    }
 
-  // Butonlar
-  const btnBuy   = $('#btnBuy');
-  const btnMsg   = $('#btnMsg');
-  const btnTrade = $('#btnTrade');
-  const btnFav   = $('#btnFav');
+    const [[cat]] = await pool.query('SELECT id FROM categories WHERE slug=? LIMIT 1', [category_slug]);
+    if (!cat) return res.status(400).json({ ok: false, error: 'Kategori yok' });
 
-  // Kullanıcı durumu
-  const user = await me();
+    const [rs] = await pool.query(
+      `INSERT INTO listings
+         (seller_id,category_id,title,slug,description_md,price_minor,currency,condition_grade,location_city,allow_trade,status,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?, 1, 'active', NOW(), NOW())`,
+      [
+        seller_id,
+        cat.id,
+        title,
+        slug || null,
+        description_md || '',
+        Number(price_minor),
+        String(currency || 'TRY').toUpperCase(),
+        condition_grade,
+        location_city || null
+      ]
+    );
 
-  // Sahiplik kontrolü: ilan sahibiyse aksiyonları kilitle
-  const isOwner = user && (user.id === listing.seller_id);
-  if (isOwner) {
-    btnBuy?.setAttribute('disabled','');
-    btnMsg?.setAttribute('disabled','');
-    btnTrade?.setAttribute('disabled','');
-    btnFav?.removeAttribute('disabled'); // Favori bırakılabilir ama genelde anlamsız; istersen disable et
+    const listingId = rs.insertId;
+
+    if (Array.isArray(image_urls) && image_urls.length) {
+      const values = image_urls.map((u, i) => [listingId, u, null, i + 1]);
+      await pool.query(
+        'INSERT INTO listing_images (listing_id,file_url,thumb_url,sort_order) VALUES ?',
+        [values]
+      );
+    }
+
+    res.json({ ok: true, id: listingId });
+  } catch (e) {
+    console.error('POST /listings error =>', e);
+    res.status(400).json({ ok: false, error: e.message });
   }
+});
 
-  // Giriş yoksa: butonlar login’e götürsün
-  function requireAuthOr(fn){
-    return () => { if (!user) { redirectToLogin(); return; } fn(); };
-  }
 
-  // Favori
-  btnFav?.addEventListener('click', requireAuthOr(async () => {
-    try{
-      // Backend /api/favorites POST user_id gerektiriyor → me.id gönder
-      const r = await fetch(`${API_BASE}/api/favorites`, {
-        method:'POST',
-        credentials:'include',
-        headers:{'Content-Type':'application/json','Accept':'application/json'},
-        body: JSON.stringify({ user_id: user.id, listing_id: listing.id })
-      });
-      const data = await r.json().catch(()=>({}));
-      alert(data.ok ? 'Favorilere eklendi' : (data.error || 'Hata'));
-    }catch(e){ alert('Hata'); }
-  }));
+/** =======================
+ *  DETAY — EN SONA KOY!
+ *  GET /api/listings/:slug
+ *  ======================= */
+r.get('/:slug', async (req, res) => {
+  const { slug } = req.params;
+  const [[row]] = await pool.query(
+    `SELECT l.*, c.name AS category_name, c.slug AS category_slug
+       FROM listings l
+       JOIN categories c ON c.id = l.category_id
+      WHERE l.slug=?`,
+    [slug]
+  );
+  if (!row) return res.status(404).json({ ok: false, error: 'İlan yok' });
 
-  // Mesaj
-  btnMsg?.addEventListener('click', requireAuthOr(async () => {
-    if (isOwner) return;
-    try{
-      const r = await fetch(`${API_BASE}/api/messages/start`, {
-        method:'POST',
-        credentials:'include',
-        headers:{'Content-Type':'application/json','Accept':'application/json'},
-        body: JSON.stringify({
-          listing_id: listing.id,
-          buyer_id: user.id,
-          seller_id: listing.seller_id,
-          body: 'Merhaba, ilanla ilgileniyorum.'
-        })
-      });
-      const data = await r.json().catch(()=>({}));
-      alert(data.ok ? 'Mesaj başlatıldı' : (data.error || 'Hata'));
-    }catch(e){ alert('Hata'); }
-  }));
+  const [imgs] = await pool.query(
+    'SELECT id,file_url,thumb_url,sort_order FROM listing_images WHERE listing_id=? ORDER BY sort_order,id',
+    [row.id]
+  );
+  res.json({ ok: true, listing: row, images: imgs });
+});
 
-  // Takas
-  btnTrade?.addEventListener('click', requireAuthOr(async () => {
-    if (isOwner) return;
-    const note = prompt('Takas teklifin (kısa not):','Kendi eski ürünümü teklif ediyorum');
-    if (note == null) return;
-    try{
-      const r = await fetch(`${API_BASE}/api/trade/offer`, {
-        method:'POST',
-        credentials:'include',
-        headers:{'Content-Type':'application/json','Accept':'application/json'},
-        body: JSON.stringify({
-          listing_id: listing.id,
-          offerer_id: user.id,
-          offered_text: note,
-          cash_adjust_minor: 0
-        })
-      });
-      const data = await r.json().catch(()=>({}));
-      alert(data.ok ? 'Takas teklifi gönderildi' : (data.error || 'Hata'));
-    }catch(e){ alert('Hata'); }
-  }));
-
-  // Satın Al
-  btnBuy?.addEventListener('click', requireAuthOr(async () => {
-    if (isOwner) return;
-    try{
-      const r = await fetch(`${API_BASE}/api/orders`, {
-        method:'POST',
-        credentials:'include',
-        headers:{'Content-Type':'application/json','Accept':'application/json'},
-        body: JSON.stringify({ buyer_id: user.id, listing_id: listing.id, qty: 1, shipping_minor: 0 })
-      });
-      const data = await r.json().catch(()=>({}));
-      alert(data.ok ? ('Sipariş oluşturuldu #' + data.order_id) : (data.error || 'Hata'));
-      // istersen sipariş sayfasına yönlendirebilirsin
-      // location.href = '/profile.html?tab=orders';
-    }catch(e){ alert('Hata'); }
-  }));
-}
+export default r;

@@ -1,98 +1,55 @@
-(function(){
+// public/js/sell.js
+(function () {
   const API_BASE = (window.APP && window.APP.API_BASE) || '';
-  const $ = (s,r=document)=>r.querySelector(s);
 
-  // … mevcut yardımcılar ve me(), toMinor(), slugify(), parseImageUrls() burada …
+  // küçük yardımcılar
+  const $ = (s, r = document) => r.querySelector(s);
+  const toMinor = (v) => {
+    if (v == null) return null;
+    const str = String(v).trim().replace(/\./g, '').replace(',', '.'); // "1.234,56" → "1234.56"
+    const num = Number(str);
+    if (!isFinite(num)) return null;
+    return Math.round(num * 100);
+  };
+  const slugify = (s) => String(s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-  async function loadCategories(){
-    const $main  = $('#catMain');
-    const $child = $('#catChild');
-
-    try{
-      const m = await API.getMainCategories();
-      if (m?.ok && Array.isArray(m.categories)){
-        // Diğer’i en alta korumak için geçici dizi
-        const otherOpt = $main.querySelector('option[value="__other"]');
-        $main.innerHTML = '<option value="">Seçiniz…</option>';
-        m.categories.forEach(c=>{
-          const opt = document.createElement('option');
-          opt.value = c.slug; opt.textContent = c.name;
-          $main.appendChild(opt);
-        });
-        if (otherOpt) $main.appendChild(otherOpt); // Diğer/Elle gir en sonda
-      }
-    }catch(e){
-      console.warn('Ana kategoriler alınamadı', e);
-      // Hata durumunda manuel slug alanını gösterelim
-      $('#customSlugWrap').style.display = 'block';
-      $main.disabled = true;
-      $child.disabled = true;
-    }
-
-    $main.addEventListener('change', async ()=>{
-      const v = $main.value;
-      const custom = $('#customSlugWrap');
-      const child  = $('#catChild');
-
-      if (v === '__other'){
-        // Elle gir moduna geç
-        custom.style.display = 'block';
-        child.innerHTML = '<option value="">Elle slug kullanılıyor</option>';
-        child.disabled = true;
-        return;
-      } else {
-        custom.style.display = 'none';
-      }
-
-      if (!v){
-        child.innerHTML = '<option value="">Önce ana kategoriyi seçin</option>';
-        child.disabled = true;
-        return;
-      }
-
-      // Alt kategorileri çek
-      child.innerHTML = '<option value="">Yükleniyor…</option>';
-      child.disabled = true;
-      try{
-        const res = await API.getChildren(v);
-        const kids = res?.children || [];
-        if (kids.length){
-          child.innerHTML = '<option value="">(Opsiyonel) Alt kategori seçin…</option>';
-          kids.forEach(k=>{
-            const o = document.createElement('option');
-            o.value = k.slug; o.textContent = k.name;
-            child.appendChild(o);
-          });
-          child.disabled = false;
-        } else {
-          child.innerHTML = '<option value="">Alt kategori yok</option>';
-          child.disabled = true;
-        }
-      }catch(e){
-        console.warn('Alt kategoriler alınamadı', e);
-        child.innerHTML = '<option value="">Yüklenemedi</option>';
-        child.disabled = true;
-      }
-    });
+  async function getMe() {
+    try {
+      const r = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include' });
+      if (!r.ok) return null;
+      const data = await r.json();
+      return data.user || data;
+    } catch { return null; }
   }
 
-  // submit içinde category_slug’i belirle
-  async function bind(){
+  function parseImageUrls(raw) {
+    return String(raw || '')
+      .split(/[\n,]/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  function bind() {
     const form = $('#f');
     if (!form || form.dataset.bound) return;
     form.dataset.bound = '1';
 
-    const msg = $('#msg'); // opsiyonel
+    const msg = $('#msg');
     const submitBtn = form.querySelector('[type="submit"]');
 
-    form.addEventListener('submit', async (e)=>{
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      msg && (msg.textContent = '');
+      if (msg) msg.textContent = '';
       if (submitBtn?.dataset.busy === '1') return;
       if (submitBtn) { submitBtn.dataset.busy = '1'; submitBtn.disabled = true; }
 
       try {
-        const user = await me();
+        // login kontrolü
+        const user = await getMe();
         if (!user) {
           const u = new URL('/login.html', location.origin);
           u.searchParams.set('redirect', location.pathname + location.search);
@@ -102,27 +59,7 @@
 
         const fd = new FormData(form);
 
-        // === KATEGORİ SLUG KARARI ===
-        const catMain  = $('#catMain')?.value || '';
-        const catChild = $('#catChild')?.value || '';
-        const custom   = $('#customSlug')?.value?.trim() || '';
-
-        let category_slug = '';
-        if (catMain === '__other') {
-          // Elle gir
-          category_slug = custom;
-        } else if (catChild) {
-          category_slug = catChild;
-        } else {
-          category_slug = catMain; // alt seçilmediyse ana slug
-        }
-
-        if (!category_slug) {
-          alert('Lütfen bir kategori seçin veya slugu elle girin.');
-          return;
-        }
-
-        // === FİYAT ===
+        // price -> price_minor
         let price_minor = null;
         if (fd.has('price_minor') && String(fd.get('price_minor')).trim() !== '') {
           const pm = Number(String(fd.get('price_minor')).trim());
@@ -135,40 +72,40 @@
           return;
         }
 
-        // === ZORUNLU ALANLAR ===
-        const title = String(fd.get('title')||'').trim();
-        if (!title) { alert('Başlık zorunludur.'); return; }
+        // zorunlular
+        const title = String(fd.get('title') || '').trim();
+        const category_slug = String(fd.get('category_slug') || '').trim();
+        if (!title || !category_slug) {
+          alert('Başlık ve kategori zorunludur.');
+          return;
+        }
 
-        // === SLUG ===
-        let slug = String(fd.get('slug')||'').trim();
+        // slug yoksa üret
+        let slug = String(fd.get('slug') || '').trim();
         if (!slug) slug = slugify(title);
 
-        // === GÖRSELLER ===
-        const image_urls = (String(fd.get('image_urls')||'')
-          .split(/[\n,]/).map(s=>s.trim()).filter(Boolean));
+        const image_urls = parseImageUrls(fd.get('image_urls'));
 
-        // === PAYLOAD ===
+        // payload (seller_id frontend’ten gelmez; backend req.user.id kullanıyor)
         const payload = {
-          // seller_id backend’den (token)
           category_slug,
           title,
           slug,
-          description_md: String(fd.get('description_md')||''),
+          description_md: String(fd.get('description_md') || ''),
           price_minor,
-          currency: (fd.get('currency')||'TRY').toString().trim().toUpperCase() || 'TRY',
-          condition_grade: String(fd.get('condition_grade')||'good'),
-          location_city: String(fd.get('location_city')||''),
+          currency: (fd.get('currency') || 'TRY').toString().trim().toUpperCase() || 'TRY',
+          condition_grade: String(fd.get('condition_grade') || 'good'),
+          location_city: String(fd.get('location_city') || ''),
           image_urls
         };
 
-        // === İSTEK ===
         const r = await fetch(`${API_BASE}/api/listings`, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'Accept':'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(payload)
         });
-        const data = await r.json().catch(()=>({}));
+        const data = await r.json().catch(() => ({}));
         if (!r.ok || data.ok === false) {
           throw new Error(data.error || data.message || `HTTP ${r.status}`);
         }
@@ -188,13 +125,10 @@
     });
   }
 
-  function boot(){
-    loadCategories();
-    bind();
-  }
+  function boot() { bind(); }
 
   document.addEventListener('partials:loaded', boot);
-  window.addEventListener('DOMContentLoaded', ()=>{
+  window.addEventListener('DOMContentLoaded', () => {
     if (typeof includePartials === 'function') includePartials();
     boot();
   });
