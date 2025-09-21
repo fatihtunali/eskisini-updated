@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="tr">
+<head>
+
+    <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
+  rel="stylesheet">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hakkımızda | Eskisini Ver Yenisini Al</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/fav.css" />
+  <meta name="description" content="Eskisini Ver Yenisini Al - güvenli al-sat ve takas platformu. DYF TURİZM TİC. LTD. ŞTİ." />
+
+  <!-- Sayfa içi ufak düzenlemeler -->
+  <style>
+    /* Grid’deki iki sütunun aynı yükseklikte hizalanması */
+    .about-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:18px;
+      align-items:stretch;         /* yükseklikleri hizala */
+    }
+    @media (max-width:900px){
+      .about-grid{ grid-template-columns: 1fr; }
+    }
+    /* Panellerin eşitlenebilmesi için içerik esnek akış */
+    .panel{ display:flex; flex-direction:column; height:100%; }
+    .panel .form{ flex:1; }
+
+    /* Küçük görsel iyileştirmeler */
+    .about-bullets{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    @media (max-width:900px){ .about-bullets{ grid-template-columns:1fr; } }
+    .about-bullets .card{ height:100%; }
+
+    /* Harita/CTA kutusu solda da şık dursun */
+    .about-cta.empty{ text-align:left; }
+  </style>
+</head>
+
+<body>
+  <!-- HEADER -->
+  <div data-include="partials/header.html"></div>
+
+  <!-- HERO -->
+  <section class="hero hero--bleed">
+    <div class="hero-content container">
+      <h1>Hakkımızda</h1>
+      <p>Eskisini Ver Yenisini Al: güvenli, şeffaf ve pratik al-sat &amp; takas deneyimi</p>
+    </div>
+  </section>
+
+  <!-- İÇERİK -->
+  <main class="container section">
+    <div class="about-grid">
+      <!-- Sol: şirket & vizyon -->
+      <article class="panel">
+        <div class="panel-head">
+          <div class="avatar">EV</div>
+          <div>
+            <div class="bold">Eskisini Ver Yenisini Al</div>
+            <div class="muted tiny">DYF TURİZM TİC. LTD. ŞTİ.</div>
+          </div>
+        </div>
+
+        <div class="form" style="padding-top:0">
+          <p>
+            İyi ürünlerin dolaşımda kalması gerektiğine inanıyoruz. Eskisini Ver Yenisini Al,
+            kullanıcıların ürünlerini güvenle <b>satmasına</b>, <b>takas etmesine</b> ve
+            <b>yenisini uygun maliyetle edinmesine</b> yardımcı olan bir platformdur.
+          </p>
+          <p>
+            Amacımız; dolandırıcılığa karşı korumalı, kolay kullanımlı ve topluluk odaklı bir pazar
+            alanı sunmaktır. KYC doğrulama, güvenli mesajlaşma ve ilan moderasyonu ile içiniz rahat olsun.
+          </p>
+
+          <div class="about-bullets" style="margin-top:12px">
+            <div class="card">
+              <b>Güven</b>
+              <div class="tiny muted">KYC &amp; moderasyon ile güvenli ortam</div>
+            </div>
+            <div class="card">
+              <b>Şeffaflık</b>
+              <div class="tiny muted">Açık kurallar, net komisyonlar</div>
+            </div>
+            <div class="card">
+              <b>Sürdürülebilirlik</b>
+              <div class="tiny muted">Ürünlerin ömrünü uzat, israfı azalt</div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Sağ: iletişim -->
+      <aside class="panel">
+        <div class="panel-head">
+          <div class="avatar">İ</div>
+          <div><div class="bold">İletişim Bilgileri</div><div class="muted tiny">7/24 bize ulaşın</div></div>
+        </div>
+
+        <div class="form" style="padding-top:0">
+          <div class="section-gap">
+            <div>
+              <div class="tiny muted">Ünvan</div>
+              <div><b>DYF TURİZM TİC. LTD. ŞTİ.</b></div>
+            </div>
+
+            <div>
+              <div class="tiny muted">Adres</div>
+              <div>
+                Mehmet Akif Ersoy Mah. Hanımeli Sok. No: 5/B<br/>
+                Üsküdar / İstanbul
+              </div>
+              <div style="margin-top:6px">
+                <a class="btn ghost tiny" href="https://www.google.com/maps/search/?api=1&query=Mehmet+Akif+Ersoy+Mah+Han%C4%B1meli+Sok+No+5%2FB+Uskudar+Istanbul" target="_blank" rel="noopener">Haritada Aç</a>
+              </div>
+            </div>
+
+            <div>
+              <div class="tiny muted">Telefon</div>
+              <div><a href="tel:+902165575252">+90 216 557 52 52</a></div>
+            </div>
+
+            <div>
+              <div class="tiny muted">E-posta</div>
+              <div><a href="mailto:info@eskisiniveryenisinial.com">info@eskisiniveryenisinial.com</a></div>
+            </div>
+
+            <div class="about-cta empty">
+              <b>Sorunuz mu var?</b><br/>
+              <span class="tiny muted">Sıkça sorulanları inceleyin ya da bize yazın.</span><br/>
+              <div style="margin-top:8px">
+                <a href="/messages.html" class="btn">Bize Yazın</a>
+                <a href="/pricing.html" class="btn ghost" style="margin-left:8px">Paketler</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <div data-include="partials/footer.html"></div>
+
+  <!-- JS -->
+  <script src="/js/partials.js"></script>
+  <script src="/js/config.js"></script>
+  <script>
+    if (typeof includePartials === 'function') includePartials();
+  </script>
+
+  <!-- Schema.org -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Eskisini Ver Yenisini Al",
+    "legalName": "DYF TURİZM TİC. LTD. ŞTİ.",
+    "url": "https://www.eskisiniveryenisinial.com/",
+    "email": "info@eskisiniveryenisinial.com",
+    "telephone": "+90 216 557 52 52",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Mehmet Akif Ersoy Mah. Hanımeli Sok. No: 5/B",
+      "addressLocality": "Üsküdar",
+      "addressRegion": "İstanbul",
+      "addressCountry": "TR"
+    }
+  }
+  </script>
+</body>
+</html>

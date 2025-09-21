@@ -1,124 +1,63 @@
 <!doctype html>
 <html lang="tr">
 <head>
+  <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
+  rel="stylesheet">
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Eskisini Ver Yenisini Al</title>
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="/css/fav.css">
+  <link rel="stylesheet" href="css/fav.css">
 </head>
 <body>
 
-<!-- HEADER PARTIAL -->
-<div data-include="partials/header.html"></div>
+  <!-- HEADER PARTIAL -->
+  <div data-include="partials/header.html"></div>
 
-<!-- HERO: full-bleed arka plan + container içerik -->
-<section class="hero hero--bleed">
-  <div class="hero-content container">
-    <h1>Eskisini Ver Yenisini Al</h1>
-    <p>Türkiye'nin en güvenilir alışveriş platformu</p>
-  </div>
-</section>
-
-
-<!-- ÖNE ÇIKANLAR -->
-<section class="container section">
-  <h2 class="center">Öne Çıkanlar</h2>
-  <div id="featured" class="grid five"></div>
-</section>
+  <!-- HERO: full-bleed görsel + içerik -->
+  <section class="hero hero--bleed">
+    <div class="hero-content container">
+      <h1>Eskisini Ver Yenisini Al</h1>
+      <p>Türkiye'nin en güvenilir alışveriş platformu</p>
+    </div>
+  </section>
 
 <!-- KATEGORİLER -->
 <section class="container section">
   <h2 class="center">Kategorileri Keşfedin</h2>
   <p class="sub center">Aradığınız ürünü kolayca bulun</p>
-  <div id="cats" class="grid five"></div>
-</section>
-<main class="container section">
-  <div id="list" class="grid five"></div>
-  <div id="pager"></div>
-</main>
-
-
-<!-- FİYATLANDIRMA -->
-<section class="container section">
-  <h2 class="center">Basit ve Şeffaf Fiyatlandırma</h2>
-  <p class="sub center">İhtiyacınıza uygun paketi seçin. İstediğiniz zaman değiştirebilirsiniz.</p>
-
-  <!-- JS dolduracak -->
-  <div id="pricing" class="grid pricing"></div>
-
-  <p class="muted center small">Tüm paketlerde KYC doğrulama ve moderasyon hizmeti dahildir.</p>
+  <!-- fixed 5 kolon -->
+  <div id="cats" class="grid five fixed5"></div>
 </section>
 
+  <!-- ÖNE ÇIKANLAR -->
+  <section class="container section">
+    <h2 id="hFeatured" class="center">Öne Çıkanlar</h2>
+    <div id="featured" class="grid five"></div>
+    <div id="pager" hidden></div> <!-- sade sayfada kullanılmıyor -->
+  </section>
 
-<!-- PLATFORM ÖZELLİKLERİ (demo paneller) -->
-<section class="container section">
-  <h2 class="center">Platform Özellikleri</h2>
- <div class="grid two">
+  <!-- FOOTER PARTIAL -->
+  <div data-include="partials/footer.html"></div>
 
-    <div class="panel">
-      <div class="panel-head">
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-        <span>KYC Doğrulama</span>
-      </div>
-      <div class="form">
-        <div class="tabs">
-          <button class="tab active">Kişisel Bilgiler</button>
-          <button class="tab">Kimlik Belgesi</button>
-          <button class="tab">Selfie Kontrolü</button>
-          <button class="tab">Onay</button>
-        </div>
-        <label>Ad<input placeholder="Adınız"></label>
-        <label>Soyad<input placeholder="Soyadınız"></label>
-        <label>TC Kimlik No<input placeholder="12345678901"></label>
-        <label>Telefon<input placeholder="+90 555 123 45 67"></label>
-        <button class="btn disabled full">Devam Et</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <div class="avatar">A</div>
-        <div>
-          <div class="bold">Ayşe Demir <span class="star">★ 4.9</span></div>
-          <div class="muted small">iPhone 15 Pro Max 256GB</div>
-        </div>
-      </div>
-      <div class="chat">
-        <div class="bubble">Merhaba, ilan hakkında bilgi alabilir miyim?<span class="time">13:30</span></div>
-        <div class="bubble me">Tabii ki! Nasıl yardımcı olabilirim?<span class="time">13:32</span></div>
-      </div>
-      <div class="chat-input">
-        <input placeholder="Mesajınızı yazın...">
-        <button class="btn">Gönder</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER PARTIAL -->
-<div data-include="partials/footer.html"></div>
-
- <!-- JS: DOĞRU SIRA -->
+  <!-- JS: doğru sıra -->
   <script src="js/partials.js"></script>
   <script src="js/config.js"></script>
-
-  <!-- API yardımcıları ÖNCE yüklenmeli -->
+  <!-- API yardımcıları önce -->
   <script src="js/api.js"></script>
-
-  <!-- Diğerleri sonra -->
+  <!-- Diğerleri -->
   <script src="js/fav.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/header.js"></script>
-
-  <!-- (Kart liste js’in varsa burada olabilir) -->
-  <script src="/js/listing.js"></script>
-
-  <!-- Ana sayfa içeriklerini başlatan kod EN SON -->
+  <!-- Ana sayfa -->
   <script src="js/home.js"></script>
 
   <script>includePartials();</script>
-
 </body>
 </html>

@@ -3,10 +3,20 @@
   --card-strong:#f3f4f6; /* eksik olan değişken eklendi */
   --radius:14px; --shadow:0 8px 30px rgba(2,6,23,.06);
   --wrap:1100px; --pad:16px; /* tek merkezleme kaynağı */
+
+  /* Google Font stack */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI",
+               Roboto, "Helvetica Neue", Arial, "Noto Sans",
+               "Apple Color Emoji","Segoe UI Emoji", sans-serif;
 }
 
 *{box-sizing:border-box}
-html,body{margin:0; padding:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui; overflow-x:clip}
+html,body{
+  margin:0; padding:0; background:var(--bg); color:var(--fg);
+  font-size:16px; line-height:1.5; font-family:var(--font-sans);
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  overflow-x:clip
+}
 
 /* ---------- Layout helpers ---------- */
 .container,
@@ -223,27 +233,6 @@ footer .container {
 .fav-btn.active .heart { fill:#ef4444; }
 .card .fav-count { font-size:.9rem; color:#6b7280; }
 
-/* Kart görseli: her zaman aynı oran ve boyda */
-.card .media,
-.card .media > a{
-  position: relative;
-  display: block;
-  width: 100%;
-  aspect-ratio: 4 / 3;      /* TEK tip görünüm: 4:3 (istersen 1/1 kare yap) */
-  overflow: hidden;
-  border-radius: 10px;
-  background: #eef2f7;
-}
-
-.card .media > img,
-.card .media > a > img{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;         /* taşanı kırpar, çirkin esnemeyi engeller */
-  display: block;
-}
 /* Grid boşluklarını biraz açalım */
 .grid { gap: 18px; }
 .grid.five { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
@@ -314,6 +303,7 @@ footer .container {
 .badge--featured{ background:#fff8e6; border-color:#facc15; color:#92400e; }
 .badge--sponsor { background:#ffeef0; border-color:#fecdd3; color:#991b1b; }
 .card .badges{ display:flex; gap:6px; align-items:center; margin:6px 0 2px; }
+
 /* Arama yerleşimi */
 .search-layout{ display:grid; grid-template-columns:260px 1fr; gap:18px; }
 @media (max-width: 900px){ .search-layout{ grid-template-columns:1fr; } }
@@ -332,6 +322,7 @@ footer .container {
 /* Toolbar */
 .toolbar{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin:0 0 12px; }
 .toolbar select{ padding:8px 10px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; }
+
 /* Bir tık daha kontrastlı birincil buton */
 .btn.primary{ background:#111827; color:#fff; border-color:#111827; }
 .btn.primary:hover{ filter: brightness(0.95); }
@@ -447,3 +438,34 @@ a:hover{ color:#111827; }
 /* (Genel) Kart görsel ölçüsü sabit kalsın – mevcut kuralın aynısıysa dokunma */
 .card .media{ position:relative; width:100%; aspect-ratio:4/3; overflow:hidden; border-radius:10px; background:#eef2f7; }
 .card .media > img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+
+/* 5 sütun sabit grid (responsive kırılımlar) */
+.grid.fixed5 { grid-template-columns: repeat(5, minmax(0,1fr)); }
+@media (max-width: 1100px){ .grid.fixed5 { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+@media (max-width: 900px) { .grid.fixed5 { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (max-width: 680px) { .grid.fixed5 { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 420px) { .grid.fixed5 { grid-template-columns: 1fr; } }
+
+/* kategori kartları eş yükseklik + merkezi hizalama */
+.catcard{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; min-height:160px; text-align:center;
+}
+.catcard .icon{
+  width:64px; height:64px; border-radius:12px; background:#f3f4f6;
+  display:grid; place-items:center; font-size:24px; user-select:none;
+}
+.catcard .c-title{ font-weight:700; }
+.catcard .c-sub{ font-size:.9rem; color:var(--muted); }
+
+/* Ürün/Listing kart görselleri her zaman aynı oran ve boyutta */
+.card .media,
+.card .media > a{
+  position:relative; display:block; width:100%;
+  aspect-ratio: 4 / 3;
+  overflow:hidden; border-radius:12px; background:#eef2f7;
+}
+.card .media img{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; display:block;
+}

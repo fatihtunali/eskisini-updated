@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
+  rel="stylesheet">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>İletişim | Eskisini Ver Yenisini Al</title>
+  <meta name="description" content="DYF TURİZM TİC. LTD. ŞTİ. ile iletişime geçin. Adres, telefon, e-posta ve iletişim formu." />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    .contact-wrap{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    @media (max-width:900px){.contact-wrap{grid-template-columns:1fr}}
+    .panel{background:#fff;border:1px solid var(--line,#e5e7eb);border-radius:16px;box-shadow:var(--shadow,0 8px 30px rgba(2,6,23,.06))}
+    .panel .hd{padding:14px 16px;border-bottom:1px solid var(--line,#e5e7eb);font-weight:700}
+    .panel .body{padding:16px}
+    .field{display:block;margin:12px 0}
+    .field > span{display:block;font-weight:600;margin-bottom:6px}
+    .field input,.field textarea, .field select{
+      width:100%;padding:10px 12px;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:#fff
+    }
+    .field textarea{min-height:120px;resize:vertical}
+    .muted{color:#6b7280}
+    .contact-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+    .contact-list li{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:10px;background:#fff}
+    .contact-list .ico{width:28px;height:28px;border:1px solid var(--line,#e5e7eb);border-radius:8px;display:grid;place-items:center}
+    .map-embed{width:100%;height:300px;border:1px solid var(--line,#e5e7eb);border-radius:12px;overflow:hidden}
+    .success{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;padding:10px;border-radius:10px;margin-bottom:10px;display:none}
+    .error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px;border-radius:10px;margin-bottom:10px;display:none}
+    .hero .hero-content h1{font-size:clamp(26px,6vw,40px)}
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <div data-include="partials/header.html"></div>
+
+  <!-- HERO -->
+  <section class="hero hero--bleed">
+    <div class="hero-content container">
+      <h1>İletişim</h1>
+      <p>Size yardımcı olmaktan memnuniyet duyarız</p>
+    </div>
+  </section>
+
+  <main class="container section">
+    <div class="contact-wrap">
+      <!-- SOL: FORM -->
+      <section class="panel">
+        <div class="hd">Bize Yazın</div>
+        <div class="body">
+          <div id="msgSuccess" class="success">Mesajınızı e-posta uygulamanızda açtık. Göndermeden önce göz atabilirsiniz.</div>
+          <div id="msgError" class="error">Formu kontrol edip tekrar deneyin.</div>
+
+          <form id="contactForm" novalidate>
+            <div class="field">
+              <span>Ad Soyad <b>*</b></span>
+              <input name="name" autocomplete="name" required placeholder="Adınız Soyadınız">
+            </div>
+            <div class="field">
+              <span>E-posta <b>*</b></span>
+              <input type="email" name="email" autocomplete="email" required placeholder="ornek@alan.com">
+            </div>
+            <div class="field">
+              <span>Konu <b>*</b></span>
+              <input name="subject" required placeholder="Kısa konu başlığı">
+            </div>
+            <div class="field">
+              <span>Mesajınız <b>*</b></span>
+              <textarea name="message" required placeholder="Sorunuzu veya talebinizi yazın"></textarea>
+            </div>
+            <div class="field">
+              <span>Kategori</span>
+              <select name="category">
+                <option value="">Seçiniz (opsiyonel)</option>
+                <option>Üyelik / Giriş</option>
+                <option>İlan / Takas</option>
+                <option>Ödeme / Faturalandırma</option>
+                <option>Şikayet / Güvenlik</option>
+                <option>Diğer</option>
+              </select>
+            </div>
+            <button class="btn primary" type="submit">Gönder</button>
+          </form>
+
+          <p class="muted tiny" style="margin-top:10px">
+            Bu form şu an e-posta uygulamanız üzerinden gönderim yapar. Yakında doğrudan site üzerinden iletim desteklenecektir.
+          </p>
+        </div>
+      </section>
+
+      <!-- SAĞ: FİRMA BİLGİLERİ -->
+      <aside class="panel">
+        <div class="hd">Firma Bilgileri</div>
+        <div class="body">
+          <ul class="contact-list">
+            <li>
+              <span class="ico">🏢</span>
+              <div>
+                <div><b>DYF TURİZM TİC. LTD. ŞTİ.</b></div>
+                <div>Mehmet Akif Ersoy Mah. Hanımeli Sok. No: 5/B</div>
+                <div>Üsküdar / İstanbul</div>
+              </div>
+            </li>
+            <li>
+              <span class="ico">☎️</span>
+              <div>
+                <div>Telefon</div>
+                <a href="tel:+902165575252">+90 216 557 52 52</a>
+              </div>
+            </li>
+            <li>
+              <span class="ico">✉️</span>
+              <div>
+                <div>E-posta</div>
+                <a href="mailto:info@eskisiniveryenisinial.com">info@eskisiniveryenisinial.com</a>
+              </div>
+            </li>
+          </ul>
+
+          <div class="map-embed" style="margin-top:12px">
+            <iframe
+              title="Harita"
+              width="100%" height="100%" style="border:0"
+              loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+              src="https://www.google.com/maps?q=Mehmet%20Akif%20Ersoy%20Mah.%20Han%C4%B1meli%20Sok.%20No%3A%205%2FB%2C%20%C3%9Csk%C3%BCdar%2FIstanbul&output=embed">
+            </iframe>
+          </div>
+
+          <div style="margin-top:12px">
+            <a class="btn" target="_blank"
+               href="https://www.google.com/maps/search/?api=1&query=Mehmet%20Akif%20Ersoy%20Mah.%20Han%C4%B1meli%20Sok.%20No%3A%205%2FB%20%C3%9Csk%C3%BCdar%20%C4%B0stanbul">
+              Haritada Aç
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <div data-include="partials/footer.html"></div>
+
+  <!-- JS -->
+  <script src="/js/partials.js"></script>
+  <script src="/js/config.js"></script>
+  <script>
+    if (typeof includePartials === 'function') includePartials();
+
+    // Basit mailto gönderimi (sunucusuz)
+    (function(){
+      const $ = (s,r=document)=>r.querySelector(s);
+      const form = $('#contactForm');
+      const ok = $('#msgSuccess');
+      const err = $('#msgError');
+      function show(el){ el && (el.style.display='block'); }
+      function hide(el){ el && (el.style.display='none'); }
+
+      form?.addEventListener('submit', (e)=>{
+        e.preventDefault(); hide(ok); hide(err);
+
+        const fd = new FormData(form);
+        const name = (fd.get('name')||'').toString().trim();
+        const email= (fd.get('email')||'').toString().trim();
+        const subj = (fd.get('subject')||'').toString().trim();
+        const msg  = (fd.get('message')||'').toString().trim();
+        const cat  = (fd.get('category')||'').toString().trim();
+
+        if(!name || !email || !subj || !msg){ show(err); return; }
+
+        const to   = 'info@eskisiniveryenisinial.com';
+        const subjFull = encodeURIComponent(`[İletişim] ${subj}`);
+        const body = encodeURIComponent(
+`İsim: ${name}
+E-posta: ${email}
+Kategori: ${cat || '-'}
+--------------------------------
+${msg}
+`
+        );
+        // mailto aç
+        window.location.href = `mailto:${to}?subject=${subjFull}&body=${body}`;
+        show(ok);
+        form.reset();
+      });
+    })();
+  </script>
+
+  <!-- Yapısal veri (opsiyonel) -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Organization",
+    "name":"DYF TURİZM TİC. LTD. ŞTİ.",
+    "url":"https://www.eskisiniveryenisinial.com/",
+    "email":"info@eskisiniveryenisinial.com",
+    "telephone":"+90 216 557 52 52",
+    "address":{
+      "@type":"PostalAddress",
+      "streetAddress":"Mehmet Akif Ersoy Mah. Hanımeli Sok. No: 5/B",
+      "addressLocality":"Üsküdar",
+      "addressRegion":"İstanbul",
+      "addressCountry":"TR"
+    }
+  }
+  </script>
+</body>
+</html>
