@@ -1,27 +1,24 @@
 <header class="hdr">
   <div class="container topbar">
-    <a href="/index.html" class="logo brand">
-      <img src="/assets/logo.png" alt="Eskisini Ver Yenisini Al" height="36">
-      <span class="brand-text">Eskisini Ver <strong>Yenisini Al</strong></span>
-    </a>
+<a href="/index.html" class="logo brand">
+  <img class="brand-mark" src="/assets/logo.png" alt="Eskisini Ver Yenisini Al">
+  <span class="brand-text">Eskisini Ver <strong>Yenisini Al</strong></span>
+</a>
 
-<form id="siteSearch" action="/search.html" method="GET" class="search">
+<form id="siteSearch" action="/index.html" method="GET" class="search">
   <input type="search" name="q" placeholder="Ürün, kategori, marka…" />
   <button type="submit" class="btn">Ara</button>
 </form>
+
 
     <!-- Misafir görünümü (default). auth.js login'de bunu otomatik değiştirir -->
     <nav class="usernav" data-state="guest">
       <a class="btn-ghost" href="/sell.html">+ İlan Ver / Takas</a>
       <a class="btn-ghost" href="/login.html">Giriş</a>
       <a class="btn-ghost" href="/register.html">Kayıt Ol</a>
-      <div class="badge-verified" title="KYC Durumu">KYC</div>
+      <a class="badge-verified" title="KYC Durumu">KYC</a>
     </nav>
   </div>
 </header>
-<script src="/js/partials.js"></script>
-<script src="/js/config.js"></script>
-<script src="/js/ui.js"></script>        <!-- opsiyonel ama faydalı -->
-<script src="/js/auth.js"></script>       <!-- header’ı hydrate eder -->
-<script src="/js/header.js" defer></script>
-<script>includePartials();</script>
+
+<!-- (Bu partial dosyanın kendi içinde JS çağırmana gerek yok) -->
