@@ -1,179 +1,124 @@
-// backend/routes/listings.js
-import { Router } from 'express';
-import { pool } from '../db.js';
-import { authRequired } from '../mw/auth.js';
+// /frontend/public/js/listing.js 
+// İlan detay sayfası için
+//
 
-const r = Router();
+(function(){
+  const API = window.APP.API_BASE; // örn: http://localhost:3000
+  const $  = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const money = (minor, cur='TRY') => new Intl.NumberFormat('tr-TR',{style:'currency',currency:cur}).format((minor||0)/100);
 
-/** =======================
- *  ARAMA / LİSTELEME
- *  GET /api/listings/search?q=&cat=&limit=&offset=
- *  ======================= */
-r.get('/search', async (req, res) => {
-  const { q = '', cat = '', limit = 24, offset = 0 } = req.query;
+  function getParams(){
+    const u = new URL(location.href);
+    return {
+      q: u.searchParams.get('q') || '',
+      cat: u.searchParams.get('cat') || '',
+      page: Math.max(1, parseInt(u.searchParams.get('page')||'1',10)),
+      size: Math.min(50, Math.max(1, parseInt(u.searchParams.get('size')||'24',10)))
+    };
+  }
 
-  const where = ['l.status="active"'];
-  const params = [];
-  let catJoin = 'JOIN categories c ON c.id = l.category_id';
+  function setParam(name, value){
+    const u = new URL(location.href);
+    if (value == null || value==='') u.searchParams.delete(name);
+    else u.searchParams.set(name, String(value));
+    history.replaceState(null,'',u.toString());
+  }
 
-  // Kategori filtreleme (seçilen + çocukları)
-  if (cat) {
-    const [[catRow]] = await pool.query(
-      'SELECT id FROM categories WHERE slug=? OR name=? LIMIT 1',
-      [cat, cat]
-    );
-    if (catRow) {
-      where.push('l.category_id IN (SELECT id FROM categories WHERE id=? OR parent_id=?)');
-      params.push(catRow.id, catRow.id);
-    } else {
-      // Eşleşme yoksa sadece slug/name eşleşmesi
-      where.push('(c.slug=? OR c.name=?)');
-      params.push(cat, cat);
+  function cardHTML(x){
+    const img = x.cover || '/assets/placeholder.png';
+    const href = `/listing.html?slug=${encodeURIComponent(x.slug)}`;
+    const isSponsor  = x.premium_level === 'sponsor'  && (!x.premium_until || new Date(x.premium_until) > new Date());
+    const isFeatured = x.premium_level === 'featured' && (!x.premium_until || new Date(x.premium_until) > new Date());
+    const highlight  = !!x.highlight;
+
+    return `
+      <article class="card ${highlight?'highlight':''}">
+        <div class="media">
+          <a href="${href}"><img loading="lazy" src="${img}" alt="${esc(x.title)}"></a>
+        </div>
+        <div class="pad">
+          <div class="badges">
+            ${isSponsor  ? `<span class="badge badge--sponsor">SPONSORLU</span>` : ``}
+            ${isFeatured ? `<span class="badge badge--featured">ÖNE ÇIKARILDI</span>` : ``}
+          </div>
+          <h3 class="title"><a href="${href}">${esc(x.title)}</a></h3>
+          <div class="meta">
+            ${x.location_city ? `<span class="city">${esc(x.location_city)}</span>`:''}
+          </div>
+          <div class="price">${money(x.price_minor, x.currency||'TRY')}</div>
+          <a class="btn" href="${href}">Görüntüle</a>
+        </div>
+      </article>
+    `;
+  }
+
+  async function load(){
+    const root = document.getElementById('list');
+    if (!root) {
+      // sayfaya <div id="list" class="grid"></div> eklemeyi unutma
+      return;
+    }
+
+    const { q, cat, page, size } = getParams();
+    const limit = size;
+    const offset = (page - 1) * size;
+
+    root.innerHTML = `<div class="pad">Yükleniyor…</div>`;
+
+    const url = new URL(`${API}/api/listings/search`);
+    if (q)   url.searchParams.set('q', q);
+    if (cat) url.searchParams.set('cat', cat);
+    url.searchParams.set('limit', String(limit));
+    url.searchParams.set('offset', String(offset));
+
+    try{
+      const res = await fetch(url, { credentials:'include', headers:{'Accept':'application/json'} });
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
+      const items = data.listings || [];
+
+      if (!items.length) {
+        root.innerHTML = `<div class="empty">Sonuç bulunamadı.</div>`;
+      } else {
+        root.innerHTML = items.map(cardHTML).join('');
+      }
+
+      renderPager(items.length, page, size);
+    }catch(err){
+      console.error(err);
+      root.innerHTML = `<div class="pad error">Liste alınamadı.</div>`;
     }
   }
 
-  // Fulltext
-  let matchSql = '';
-  if (q && q.trim()) {
-    matchSql = 'AND MATCH(l.title,l.description_md) AGAINST (? IN BOOLEAN MODE)';
-    params.push(`${q}*`);
+  function renderPager(count, page, size){
+    const el = document.getElementById('pager');
+    if (!el) return;
+    // basit "ileri/geri" — sayfa başına veri varsa ileri göster
+    const hasPrev = page > 1;
+    const hasNext = count >= size;
+
+    el.innerHTML = `
+      <div class="pager">
+        <button class="btn" data-act="prev" ${hasPrev?'':'disabled'}>‹ Önceki</button>
+        <span class="page">Sayfa ${page}</span>
+        <button class="btn" data-act="next" ${hasNext?'':'disabled'}>Sonraki ›</button>
+      </div>
+    `;
+
+    el.onclick = (e)=>{
+      const b = e.target.closest('button[data-act]');
+      if (!b) return;
+      const act = b.dataset.act;
+      const { size } = getParams();
+      if (act==='prev') setParam('page', Math.max(1, (parseInt(getParams().page)+ -1)));
+      if (act==='next') setParam('page', (parseInt(getParams().page)+ 1));
+      load();
+    };
   }
 
-  const sql = `
-    SELECT
-      l.id, l.title, l.slug,
-      l.price_minor, l.currency, l.location_city,
-      (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS cover
-    FROM listings l
-    ${catJoin}
-    ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-    ${matchSql}
-    ORDER BY l.created_at DESC
-    LIMIT ? OFFSET ?`;
-
-  params.push(Number(limit), Number(offset));
-  const [rows] = await pool.query(sql, params);
-  res.json({ ok: true, listings: rows });
-});
-
-
-/** =======================
- *  İLANLARIM (AUTH)
- *  GET /api/listings/my?page=&size=
- *  ======================= */
-r.get('/my', authRequired, async (req, res) => {
-  const page = Math.max(1, parseInt(req.query.page || '1', 10));
-  const size = Math.min(50, Math.max(1, parseInt(req.query.size || '12', 10)));
-  const off  = (page - 1) * size;
-
-  const [[{ cnt }]] = await pool.query(
-    `SELECT COUNT(*) cnt FROM listings WHERE seller_id = ?`,
-    [req.user.id]
-  );
-
-  const [rows] = await pool.query(
-    `SELECT
-        l.id,
-        l.title,
-        l.slug,
-        l.price_minor AS price,             -- frontend eski alanı beklerse uyum için
-        c.name AS category_name,
-        (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS thumb_url,
-        l.created_at
-     FROM listings l
-     JOIN categories c ON c.id = l.category_id
-     WHERE l.seller_id = ?
-     ORDER BY l.id DESC
-     LIMIT ? OFFSET ?`,
-    [req.user.id, size, off]
-  );
-
-  res.json({ total: cnt, page, size, items: rows });
-});
-
-
-/** =======================
- *  OLUŞTUR (AUTH)
- *  POST /api/listings
- *  Body: { category_slug, title, slug?, description_md?, price_minor, currency?, condition_grade?, location_city?, image_urls?[] }
- *  ======================= */
-r.post('/', authRequired, async (req, res) => {
-  try {
-    const seller_id = req.user.id;
-    const {
-      category_slug,
-      title,
-      slug,
-      description_md,
-      price_minor,
-      currency = 'TRY',
-      condition_grade = 'good',
-      location_city,
-      image_urls = []
-    } = req.body || {};
-
-    if (!seller_id || !category_slug || !title || !price_minor) {
-      return res.status(400).json({ ok: false, error: 'Eksik alan' });
-    }
-
-    const [[cat]] = await pool.query('SELECT id FROM categories WHERE slug=? LIMIT 1', [category_slug]);
-    if (!cat) return res.status(400).json({ ok: false, error: 'Kategori yok' });
-
-    const [rs] = await pool.query(
-      `INSERT INTO listings
-         (seller_id,category_id,title,slug,description_md,price_minor,currency,condition_grade,location_city,allow_trade,status,created_at,updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?, 1, 'active', NOW(), NOW())`,
-      [
-        seller_id,
-        cat.id,
-        title,
-        slug || null,
-        description_md || '',
-        Number(price_minor),
-        String(currency || 'TRY').toUpperCase(),
-        condition_grade,
-        location_city || null
-      ]
-    );
-
-    const listingId = rs.insertId;
-
-    if (Array.isArray(image_urls) && image_urls.length) {
-      const values = image_urls.map((u, i) => [listingId, u, null, i + 1]);
-      await pool.query(
-        'INSERT INTO listing_images (listing_id,file_url,thumb_url,sort_order) VALUES ?',
-        [values]
-      );
-    }
-
-    res.json({ ok: true, id: listingId });
-  } catch (e) {
-    console.error('POST /listings error =>', e);
-    res.status(400).json({ ok: false, error: e.message });
-  }
-});
-
-
-/** =======================
- *  DETAY — EN SONA KOY!
- *  GET /api/listings/:slug
- *  ======================= */
-r.get('/:slug', async (req, res) => {
-  const { slug } = req.params;
-  const [[row]] = await pool.query(
-    `SELECT l.*, c.name AS category_name, c.slug AS category_slug
-       FROM listings l
-       JOIN categories c ON c.id = l.category_id
-      WHERE l.slug=?`,
-    [slug]
-  );
-  if (!row) return res.status(404).json({ ok: false, error: 'İlan yok' });
-
-  const [imgs] = await pool.query(
-    'SELECT id,file_url,thumb_url,sort_order FROM listing_images WHERE listing_id=? ORDER BY sort_order,id',
-    [row.id]
-  );
-  res.json({ ok: true, listing: row, images: imgs });
-});
-
-export default r;
+  // ilk yükleme
+  window.addEventListener('DOMContentLoaded', load);
+  // arama kutun varsa, submit’te setParam('q', ...) yapıp load() çağır
+})();

@@ -180,3 +180,13 @@ footer .container {
 .footer { border-top:1px solid var(--line); padding:18px 0; background:#f8fafc; margin-top:32px }
 .footer a { color: inherit; text-decoration: none; }
 .footer a:hover { text-decoration: underline; }
+
+.badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--line); }
+.badge--featured { border-color:#f59e0b; }
+.badge--sponsor  { border-color:#ef4444; }
+.card .badges { display:flex; gap:6px; align-items:center; }
+.card.highlight { outline: 2px dashed #f59e0b33; }
+.pricecard { border:1px solid var(--line); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:12px; }
+.pricecard .price { font-size:28px; font-weight:700; }
+.pricecard .period { font-size:14px; opacity:.7; margin-left:4px; }
+.grid.pricing { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }

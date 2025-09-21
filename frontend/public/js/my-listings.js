@@ -130,6 +130,8 @@ console.log('[MY-LISTINGS] script loaded');
     load();
   }
 
+  
+
   // Works with partials
   document.addEventListener('partials:loaded', boot);
   // Also run if page doesn't use partials

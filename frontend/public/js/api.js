@@ -113,6 +113,20 @@ const API = (() => {
     },
     myOrders() {
       return jfetch('/api/orders/my');
-    }
-  };
+    },
+ 
+
+  // Planlar
+getPlans() {
+  return jfetch('/api/billing/plans');
+},
+subscribe(plan_code) {
+  return jfetch('/api/billing/subscribe', { method:'POST', body:{ plan_code } });
+},
+// Promosyon
+promoteListing({ listing_id, type }) {
+  return jfetch('/api/billing/promote', { method:'POST', body:{ listing_id, type } });
+},
+
+ };
 })();

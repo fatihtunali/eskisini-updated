@@ -9,11 +9,19 @@ export function signToken(payload){
 }
 
 function getTokenFromReq(req){
-  // Önce Authorization: Bearer, sonra cookie: token
-  const h = req.headers.authorization;
+  const h = req.headers.authorization || req.get?.('authorization');
   if (h && h.startsWith('Bearer ')) return h.slice(7);
-  if (req.cookies && req.cookies.token) return req.cookies.token;
+  if (req.cookies?.token) return req.cookies.token;
+  if (req.cookies?.jwt) return req.cookies.jwt;
   return null;
+}
+
+async function loadUser(userId){
+  const [rows] = await pool.query(
+    `SELECT id, email, full_name, kyc_status, is_kyc_verified
+       FROM users WHERE id=? LIMIT 1`, [userId]
+  );
+  return rows[0] || null;
 }
 
 export async function authRequired(req, res, next){
@@ -21,14 +29,31 @@ export async function authRequired(req, res, next){
   if(!token) return res.status(401).json({ error: 'unauthorized' });
   try{
     const data = jwt.verify(token, JWT_SECRET);
-    const [rows] = await pool.query(
-      `SELECT id, email, full_name, kyc_status, is_kyc_verified
-       FROM users WHERE id=? LIMIT 1`, [data.id]
-    );
-    if(!rows[0]) return res.status(401).json({ error: 'unauthorized' });
-    req.user = rows[0];
+    const user = await loadUser(data.id);
+    if(!user) return res.status(401).json({ error: 'unauthorized' });
+    req.user = user;
     next();
   }catch{
     return res.status(401).json({ error: 'unauthorized' });
   }
+}
+
+export async function authOptional(req, _res, next){
+  const token = getTokenFromReq(req);
+  if(!token) return next();
+  try{
+    const data = jwt.verify(token, JWT_SECRET);
+    const user = await loadUser(data.id);
+    if (user) req.user = user;
+  }catch{/* sessiz geç */}
+  next();
+}
+
+export function requireRole(...roles){
+  return (req,res,next)=>{
+    if(!req.user?.role || !roles.includes(req.user.role)) {
+      return res.status(403).json({ error:'forbidden' });
+    }
+    next();
+  };
 }

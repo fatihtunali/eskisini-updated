@@ -1,0 +1,52 @@
+<!doctype html><html lang="tr"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Fiyatlandırma | Eskisini</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head><body>
+  <div data-include="/partials/header.html"></div>
+
+  <main class="container section">
+    <h1 class="center">Basit ve Şeffaf Fiyatlandırma</h1>
+    <p class="sub center">İhtiyacınıza uygun paketi seçin.</p>
+    <div id="plans" class="grid pricing"></div>
+  </main>
+
+  <script src="/js/partials.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/api.js"></script>
+  <script>
+  (async function(){
+    await includePartials();
+    const { plans } = await API.getPlans();
+    const wrap = document.getElementById('plans');
+    const money = (m,c='TRY') => new Intl.NumberFormat('tr-TR',{style:'currency',currency:c}).format(m/100);
+
+    wrap.innerHTML = plans.map(p => `
+      <article class="pricecard ${p.code==='pro_m'?'price-pro': p.code==='biz_m'?'price-business':'price-free'}">
+        <h3>${p.name}</h3>
+        <div class="price">${money(p.price_minor,p.currency)} <span class="period">/${p.period==='monthly'?'ay':'yıl'}</span></div>
+        <ul class="plist">
+          <li>Aylık ilan hakkı: <b>${p.listing_quota_month===9999?'Sınırsız':p.listing_quota_month}</b></li>
+          <li>Bump: <b>${p.bump_credits_month}</b></li>
+          <li>Featured: <b>${p.featured_credits_month}</b></li>
+          <li>Destek: <b>${p.support_level}</b></li>
+          ${p.perks?`<li>${p.perks}</li>`:''}
+        </ul>
+        <button class="btn primary" data-plan="${p.code}">${p.price_minor? 'Satın Al' : 'Seç'}</button>
+      </article>
+    `).join('');
+
+    wrap.addEventListener('click', async (e)=>{
+      const btn = e.target.closest('button[data-plan]');
+      if(!btn) return;
+      try{
+        await API.subscribe(btn.dataset.plan);
+        alert('Paketiniz aktif edildi!');
+        location.href='/my-listings.html';
+      }catch(err){
+        alert(err.payload?.error || err.message);
+      }
+    });
+  })();
+  </script>
+</body></html>

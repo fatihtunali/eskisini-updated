@@ -13,14 +13,22 @@ import favorites from './routes/favorites.js';
 import messages from './routes/messages.js';
 import trade from './routes/trade.js';
 import orders from './routes/orders.js';
+import billing from './routes/billing.js';
+// en üstte importlar arasına
+import users from './routes/users.js';
+
+import { pingDb } from './db.js';
+await pingDb();
+
+
 
 const app = express();
 
 // --- güvenli CORS köken listesi ---
-const ORIGINS = (process.env.CORS_ORIGIN || '')
+const ORIGINS = (process.env.CORS_ORIGIN || 'http://localhost:5500,http://127.0.0.1:5500')
   .split(',')
   .map(s => s.trim())
-  .filter(Boolean); // ör: ["http://localhost:5500","http://127.0.0.1:5500","https://www.eskisiniveryenisinial.com"]
+  .filter(Boolean);
 
 // Prod’da proxy arkası için (secure cookie/SameSite=None senaryosu)
 if (process.env.COOKIE_SECURE === 'true') {
@@ -31,6 +39,7 @@ if (process.env.COOKIE_SECURE === 'true') {
 app.use(morgan('dev'));
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
+
 app.use(cors({
   origin: ORIGINS,           // '*' KULLANMA
   credentials: true
@@ -43,12 +52,16 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // --- routes ---
 app.use('/api/auth', auth);
+app.use('/api/billing', billing);
 app.use('/api/categories', categories);
-app.use('/api/listings', listings);
 app.use('/api/favorites', favorites);
+app.use('/api/listings', listings);
 app.use('/api/messages', messages);
-app.use('/api/trade', trade);
 app.use('/api/orders', orders);
+app.use('/api/trade', trade);
+app.use('/api/users', users);
+
+
 
 // --- 404 ve hata yakalayıcı (opsiyonel ama faydalı) ---
 app.use((req, res) => res.status(404).json({ ok: false, error: 'not_found' }));
