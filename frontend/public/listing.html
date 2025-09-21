@@ -3,39 +3,79 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>İlan | Eskisini Ver Yenisini Al</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <title>İlan Detayı</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/fav.css">
 </head>
 <body>
+  <div data-include="partials/header.html"></div>
 
-<div data-include="partials/header.html"></div>
+  <main class="container section">
+    <div id="detail" class="listing card">
+      <div class="media"><img id="img" src="/assets/placeholder.png" alt="" style="width:100%;max-height:360px;object-fit:cover;border-radius:12px"></div>
+      <div class="pad">
+        <h1 id="title" style="margin:8px 0 6px">Yükleniyor…</h1>
+        <div id="meta" class="muted"></div>
+        <div id="price" class="price" style="font-size:22px;font-weight:700;margin:8px 0 14px"></div>
 
-<section class="hero hero--bleed">
-  <div class="hero-content container">
-    <h1 id="hTitle">İlan</h1>
-    <p class="muted">Güvenli alışveriş ve takas</p>
-  </div>
-</section>
+        <div class="card-actions">
+          <button class="btn" id="msgBtn">Satıcıya Mesaj</button>
+          <span class="fav-count" id="favCount">0</span>
+          <button class="fav-btn" id="favBtn" data-listing-id="">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path class="heart" d="M12 21s-6.7-4.35-9.33-7C.34 11.64.63 8.39 3 6.67A5.09 5.09 0 0 1 12 8a5.09 5.09 0 0 1 9-1.33C23.37 8.39 23.66 11.64 21.33 14 18.7 16.65 12 21 12 21z"/>
+            </svg>
+          </button>
+        </div>
 
-<main class="container section">
-  <div id="detail"></div>
-  <div class="actions" style="display:flex; gap:10px; margin-top:12px;">
-    <button id="btnBuy"   class="btn primary">Satın Al</button>
-    <button id="btnMsg"   class="btn">Mesaj Gönder</button>
-    <button id="btnTrade" class="btn">Takas Öner</button>
-    <button id="btnFav"   class="btn-ghost">Favori</button>
-  </div>
-</main>
+        <article id="desc" style="margin-top:14px"></article>
+      </div>
+    </div>
+  </main>
 
-<div data-include="partials/footer.html"></div>
+  <div data-include="partials/footer.html"></div>
 
-<!-- JS -->
-<script src="js/partials.js"></script>
-<script src="js/config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/header.js"></script>
-<script src="js/api.js"></script>
-<script src="js/listing.js"></script>
-<script>includePartials();</script>
+  <script src="/js/partials.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/fav.js"></script>
+  <script>
+  (async function(){
+    if (typeof includePartials === 'function') includePartials();
+
+    const API = window.APP.API_BASE;
+    const $ = (s,r=document)=>r.querySelector(s);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+    const money = (minor, cur='TRY') => new Intl.NumberFormat('tr-TR',{style:'currency',currency:cur}).format((minor||0)/100);
+
+    const u = new URL(location.href);
+    const slug = u.searchParams.get('slug');
+    if (!slug) { location.href = '/'; return; }
+
+    try{
+      const res = await fetch(`${API}/api/listings/${encodeURIComponent(slug)}`, { headers:{'Accept':'application/json'} });
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
+      if (!data?.ok) throw new Error('not_ok');
+
+      const L = data.listing;
+      const imgs = data.images || [];
+      $('#title').textContent = L.title || '';
+      $('#meta').textContent  = [L.category_name, L.location_city].filter(Boolean).join(' • ');
+      $('#price').textContent = money(L.price_minor, L.currency || 'TRY');
+      $('#desc').innerHTML    = `<pre style="white-space:pre-wrap">${esc(L.description_md||'')}</pre>`;
+      $('#img').src           = (imgs[0]?.file_url) || '/assets/placeholder.png';
+
+      // Favori hydrate
+      const favBtn = $('#favBtn');
+      const favCount = $('#favCount');
+      favBtn.dataset.listingId = L.id;
+      favCount.textContent = String(L.favorites_count ?? 0);
+      if (window.FAV) await FAV.wireFavButtons(document);
+    }catch(e){
+      console.error(e);
+      $('#detail').innerHTML = `<div class="pad error">İlan bulunamadı.</div>`;
+    }
+  })();
+  </script>
 </body>
 </html>

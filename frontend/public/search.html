@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Arama Sonuçları</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/fav.css">
+  <style>
+    .search-layout{display:grid;grid-template-columns:260px 1fr;gap:18px}
+    @media (max-width:900px){.search-layout{grid-template-columns:1fr}}
+    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px}
+    .panel h3{margin:4px 0 8px;font-size:1rem}
+    .filters .field{display:block;margin:10px 0}
+    .filters input,.filters select{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px}
+    .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .muted{color:#6b7280}
+  </style>
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+  <main class="container section">
+    <h1 style="margin:0 0 12px">Arama Sonuçları</h1>
+
+    <div class="search-layout">
+      <!-- SOL: FİLTRELER -->
+      <aside class="panel filters">
+        <h3>Filtreler</h3>
+        <label class="field">
+          <span>Ara</span>
+          <input type="search" id="f_q" placeholder="Anahtar kelime">
+        </label>
+        <label class="field">
+          <span>Kategori</span>
+          <select id="f_cat">
+            <option value="">Tümü</option>
+          </select>
+        </label>
+        <div class="grid two" style="gap:8px">
+          <label class="field">
+            <span>Min ₺</span>
+            <input id="f_min" type="number" min="0" step="1" placeholder="0">
+          </label>
+          <label class="field">
+            <span>Maks ₺</span>
+            <input id="f_max" type="number" min="0" step="1" placeholder="100000">
+          </label>
+        </div>
+        <button class="btn primary" id="apply">Uygula</button>
+      </aside>
+
+      <!-- SAĞ: SONUÇLAR -->
+      <section>
+        <div class="toolbar">
+          <div id="resultInfo" class="muted">Yükleniyor…</div>
+          <div>
+            <label class="muted" for="f_sort">Sırala:</label>
+            <select id="f_sort">
+              <option value="newest">En yeni</option>
+              <option value="price_asc">Fiyat artan</option>
+              <option value="price_desc">Fiyat azalan</option>
+              <option value="popular">Popüler</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="list" class="grid five"></div>
+        <div id="pager" style="margin-top:12px"></div>
+      </section>
+    </div>
+  </main>
+
+  <div data-include="partials/footer.html"></div>
+
+  <script src="/js/partials.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/fav.js"></script>
+  <script src="/js/search.js"></script>
+  <script>includePartials();</script>
+</body>
+</html>

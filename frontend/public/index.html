@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Eskisini Ver Yenisini Al</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="/css/fav.css">
 </head>
 <body>
 
@@ -32,6 +33,11 @@
   <p class="sub center">Aradığınız ürünü kolayca bulun</p>
   <div id="cats" class="grid five"></div>
 </section>
+<main class="container section">
+  <div id="list" class="grid five"></div>
+  <div id="pager"></div>
+</main>
+
 
 <!-- FİYATLANDIRMA -->
 <section class="container section">
@@ -135,16 +141,18 @@
 <!-- JS: doğru sıra -->
 <script src="js/partials.js"></script>
 <script src="js/config.js"></script>
-<script src="js/ui.js"></script>        <!-- (opsiyonel) küçük UI yardımcıları -->
-<script src="js/auth.js"></script>      <!-- header’ı login durumuna göre hydrate eder -->
-<script src="js/header.js"></script>    <!-- arama kutusu ve event bağlama -->
+<script src="js/fav.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/header.js"></script>
+
+<!-- API ÖNCE -->
 <script src="js/api.js"></script>
+
+<!-- HOME SONRA -->
 <script src="js/home.js"></script>
 
-<script>
-  // Partial'ları yükle; auth/header 'partials:loaded' ile kendini çalıştırır
-  includePartials();
-</script>
+<script>includePartials();</script>
 
 </body>
 </html>

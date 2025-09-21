@@ -5,10 +5,10 @@
       <span class="brand-text">Eskisini Ver <strong>Yenisini Al</strong></span>
     </a>
 
-    <div class="search">
-      <input id="q" type="search" aria-label="Sitede ara" ...>
-      <button id="btnSearch" type="button">Ara</button>
-    </div>
+<form id="siteSearch" action="/search.html" method="GET" class="search">
+  <input type="search" name="q" placeholder="Ürün, kategori, marka…" />
+  <button type="submit" class="btn">Ara</button>
+</form>
 
     <!-- Misafir görünümü (default). auth.js login'de bunu otomatik değiştirir -->
     <nav class="usernav" data-state="guest">

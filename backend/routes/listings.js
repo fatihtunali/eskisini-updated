@@ -17,13 +17,9 @@ function slugify(str) {
     .slice(0, 180);
 }
 
-/* -------- search -------- */
-/** GET /api/listings/search?q=&cat=&limit=&offset= */
+/** Arama & listeleme (fulltext + kategori + fiyat + sıralama) */
 r.get('/search', async (req, res) => {
-  const limit  = Math.min(100, Math.max(1, parseInt(req.query.limit ?? '24', 10)));
-  const offset = Math.max(0, parseInt(req.query.offset ?? '0', 10));
-  const q   = (req.query.q ?? '').trim();
-  const cat = (req.query.cat ?? '').trim();
+  const { q = '', cat = '', limit = 24, offset = 0, min_price, max_price, sort = 'newest' } = req.query;
 
   const where = ['l.status="active"'];
   const params = [];
@@ -42,29 +38,39 @@ r.get('/search', async (req, res) => {
     }
   }
 
-  let matchSql = '';
-  if (q) {
-    matchSql = 'AND MATCH(l.title,l.description_md) AGAINST (? IN BOOLEAN MODE)';
+  if (q && q.trim()) {
+    where.push('MATCH(l.title,l.description_md) AGAINST (? IN BOOLEAN MODE)');
     params.push(`${q}*`);
+  }
+
+  // fiyat aralığı (minor = kuruş)
+  const min = Number.isFinite(+min_price) ? Math.max(0, parseInt(min_price,10)) : null;
+  const max = Number.isFinite(+max_price) ? Math.max(0, parseInt(max_price,10)) : null;
+  if (min != null) { where.push('l.price_minor >= ?'); params.push(min); }
+  if (max != null) { where.push('l.price_minor <= ?'); params.push(max); }
+
+  // sıralama
+  let orderBy = 'l.created_at DESC';
+  switch (String(sort)) {
+    case 'price_asc':  orderBy = 'l.price_minor ASC'; break;
+    case 'price_desc': orderBy = 'l.price_minor DESC'; break;
+    case 'popular':    orderBy = 'l.views_count DESC'; break;
+    default:           orderBy = 'l.created_at DESC'; // newest
   }
 
   const sql = `
     SELECT
       l.id, l.title, l.slug,
       l.price_minor, l.currency, l.location_city,
-      l.premium_level, l.premium_until, l.bumped_at, l.highlight,
+      l.favorites_count, l.premium_level, l.premium_until, l.highlight,
       (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS cover
     FROM listings l
     ${catJoin}
     ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-    ${matchSql}
-    ORDER BY
-      (l.premium_level='sponsor'  AND (l.premium_until IS NULL OR l.premium_until>NOW())) DESC,
-      (l.premium_level='featured' AND (l.premium_until IS NULL OR l.premium_until>NOW())) DESC,
-      COALESCE(l.bumped_at, l.created_at) DESC
+    ORDER BY ${orderBy}
     LIMIT ? OFFSET ?`;
-  params.push(limit, offset);
 
+  params.push(Math.min(100, Number(limit)), Math.max(0, Number(offset)));
   const [rows] = await pool.query(sql, params);
   res.json({ ok: true, listings: rows });
 });

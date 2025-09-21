@@ -1,9 +1,6 @@
-// /frontend/public/js/listing.js 
-// İlan detay sayfası için
-//
-
+// frontend/public/js/listing.js
 (function(){
-  const API = window.APP.API_BASE; // örn: http://localhost:3000
+  const API = window.APP.API_BASE;
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
   const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
@@ -33,6 +30,9 @@
     const isFeatured = x.premium_level === 'featured' && (!x.premium_until || new Date(x.premium_until) > new Date());
     const highlight  = !!x.highlight;
 
+    const favBtn = window.FAV ? FAV.favButtonHTML(x.id, false) : '';
+    const favCount = Number.isFinite(x.favorites_count) ? x.favorites_count : 0;
+
     return `
       <article class="card ${highlight?'highlight':''}">
         <div class="media">
@@ -48,7 +48,11 @@
             ${x.location_city ? `<span class="city">${esc(x.location_city)}</span>`:''}
           </div>
           <div class="price">${money(x.price_minor, x.currency||'TRY')}</div>
-          <a class="btn" href="${href}">Görüntüle</a>
+          <div class="card-actions">
+            <a class="btn" href="${href}">Görüntüle</a>
+            <span class="fav-count">${favCount}</span>
+            ${favBtn}
+          </div>
         </div>
       </article>
     `;
@@ -56,10 +60,7 @@
 
   async function load(){
     const root = document.getElementById('list');
-    if (!root) {
-      // sayfaya <div id="list" class="grid"></div> eklemeyi unutma
-      return;
-    }
+    if (!root) return;
 
     const { q, cat, page, size } = getParams();
     const limit = size;
@@ -83,6 +84,7 @@
         root.innerHTML = `<div class="empty">Sonuç bulunamadı.</div>`;
       } else {
         root.innerHTML = items.map(cardHTML).join('');
+        if (window.FAV) await FAV.wireFavButtons(root);
       }
 
       renderPager(items.length, page, size);
@@ -95,7 +97,6 @@
   function renderPager(count, page, size){
     const el = document.getElementById('pager');
     if (!el) return;
-    // basit "ileri/geri" — sayfa başına veri varsa ileri göster
     const hasPrev = page > 1;
     const hasNext = count >= size;
 
@@ -111,14 +112,11 @@
       const b = e.target.closest('button[data-act]');
       if (!b) return;
       const act = b.dataset.act;
-      const { size } = getParams();
-      if (act==='prev') setParam('page', Math.max(1, (parseInt(getParams().page)+ -1)));
-      if (act==='next') setParam('page', (parseInt(getParams().page)+ 1));
+      if (act==='prev') setParam('page', Math.max(1, page - 1));
+      if (act==='next') setParam('page', page + 1);
       load();
     };
   }
 
-  // ilk yükleme
   window.addEventListener('DOMContentLoaded', load);
-  // arama kutun varsa, submit’te setParam('q', ...) yapıp load() çağır
 })();

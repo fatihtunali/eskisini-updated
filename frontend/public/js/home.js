@@ -1,10 +1,29 @@
 // public/js/home.js
 
-// Partials (header/footer)
-window.addEventListener('DOMContentLoaded', () => {
-  if (typeof includePartials === 'function') includePartials();
-  boot(); // içerik yüklemeyi DOM hazır olduğunda başlat
+// Partials yüklenince çalışalım (header/footer hazır)
+document.addEventListener('partials:loaded', () => {
+  safeBoot();
 });
+
+// Yedek: partials tetiklenmezse DOM hazır olunca da deneyelim (çift çağrıya karşı kilit var)
+document.addEventListener('DOMContentLoaded', () => {
+  safeBoot();
+});
+
+// -- tek seferlik çalıştırma kilidi
+let __booted = false;
+function safeBoot(){
+  if (__booted) return;
+  __booted = true;
+  try { boot(); }
+  catch (e) {
+    console.error('[HOME] boot failed:', e);
+    const catsBox = document.getElementById('cats');
+    const featBox = document.getElementById('featured');
+    if (catsBox) catsBox.innerHTML = `<div class="muted center">Anasayfa yüklenemedi.</div>`;
+    if (featBox) featBox.innerHTML = `<div class="muted center">Anasayfa yüklenemedi.</div>`;
+  }
+}
 
 // === Helpers (CSP uyumlu) ===
 const h = s => String(s ?? '').replace(/[&<>"'`]/g, m =>
@@ -49,7 +68,7 @@ function renderCategorySkeleton(container, count) {
   container.classList.add('skeleton-on');
   container.innerHTML = Array.from({ length: count }).map(() => `
     <div class="skel card">
-      <div class="skel avatar"></div>
+      <div class="skel media"></div>
       <div class="skel line w70"></div>
       <div class="skel line w40"></div>
     </div>
@@ -58,8 +77,13 @@ function renderCategorySkeleton(container, count) {
 
 function clearSkeleton(container) { container?.classList.remove('skeleton-on'); }
 
-// === Güvenli başlatma ===
+// === Asıl iş ===
 async function boot(){
+  // API yüklendi mi?
+  if (!window.API || typeof API.getMainCategories !== 'function') {
+    throw new Error('window.API yüklü değil veya api.js sırası yanlış. index.html’de api.js, home.js’ten ÖNCE gelmeli.');
+  }
+
   const url   = new URL(location.href);
   const q     = url.searchParams.get('q') || '';
 
@@ -70,25 +94,34 @@ async function boot(){
   catsBox?.classList.add('grid','five');
   featBox?.classList.add('grid','five');
 
-  // Kategoriler
+  // ---- KATEGORİLER ----
   if (catsBox) {
     renderCategorySkeleton(catsBox, 10);
     try {
-      const res = await API.getMainCategories();
+      const res = await API.getMainCategories(12);
       const categories = res?.categories || [];
       if (res?.ok && categories.length) {
-        catsBox.innerHTML = categories.slice(0, 10).map(c => `
-          <a class="catcard" href="category.html?slug=${encodeURIComponent(c.slug)}">
-            <div class="icon">▦</div>
-            <div class="c-title">${h(c.name)}</div>
-            <div class="c-sub muted">Popüler</div>
-          </a>
-        `).join('');
+        catsBox.innerHTML = categories.slice(0, 12).map(c => {
+          const img = c.sample_image || 'assets/hero.jpg';
+          const href = `search.html?cat=${encodeURIComponent(c.slug)}`;
+          const count = Number(c.active_count || 0).toLocaleString('tr-TR');
+          return `
+            <a class="catcard" href="${href}">
+              <div class="media">
+                <img src="${img}" alt="${h(c.name)}" data-fallback>
+              </div>
+              <div class="pad">
+                <div class="c-title">${h(c.name)}</div>
+                <div class="c-sub muted">${count} ilan</div>
+              </div>
+            </a>
+          `;
+        }).join('');
       } else {
         catsBox.innerHTML = `<div class="muted center">Kategoriler yüklenemedi.</div>`;
       }
     } catch (e) {
-      console.error(e);
+      console.error('[HOME] categories error:', e);
       catsBox.innerHTML = `<div class="muted center">Kategoriler yüklenemedi.</div>`;
     } finally {
       clearSkeleton(catsBox);
@@ -96,11 +129,10 @@ async function boot(){
     }
   }
 
-  // Öne çıkanlar / Arama sonuçları
+  // ---- ÖNE ÇIKANLAR / ARAMA SONUÇLARI ----
   if (featBox) {
     renderProductSkeleton(featBox, 10);
     try {
-      // q varsa arama sonucunu, yoksa öne çıkanları getir
       const params = q ? { q, limit: 12 } : { cat: 'akilli-telefonlar', limit: 12 };
       const res = await API.search(params);
       const items = res?.listings || [];
@@ -111,7 +143,7 @@ async function boot(){
           return `
             <a class="product" href="listing.html?slug=${encodeURIComponent(x.slug)}">
               ${q ? '' : '<div class="flag">Öne Çıkan</div>'}
-              <img src="${cover}" alt="${h(x.title)}" data-fallback>
+              <div class="media"><img src="${cover}" alt="${h(x.title)}" data-fallback></div>
               <div class="p-meta">
                 <div class="p-price">${fmtPrice(x.price_minor, x.currency)}</div>
                 <div class="p-views" aria-label="Görüntülenme">👁 ${Math.floor(50 + Math.random()*250)}</div>
@@ -126,7 +158,7 @@ async function boot(){
         featBox.innerHTML = `<div class="muted center">${q ? 'Arama sonucu bulunamadı.' : 'İlan bulunamadı.'}</div>`;
       }
     } catch (e) {
-      console.error(e);
+      console.error('[HOME] featured error:', e);
       if (hFeat) hFeat.style.display = 'none';
       featBox.innerHTML = `<div class="muted center">İlanlar yüklenemedi.</div>`;
     } finally {
