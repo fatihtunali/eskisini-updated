@@ -44,51 +44,12 @@
   <h2 class="center">Basit ve Şeffaf Fiyatlandırma</h2>
   <p class="sub center">İhtiyacınıza uygun paketi seçin. İstediğiniz zaman değiştirebilirsiniz.</p>
 
-  <div class="grid pricing">
-    <article class="pricecard price-free">
-      <div class="chip success">Mevcut Paket</div>
-      <h3>Bireysel Ücretsiz</h3>
-      <div class="price">Ücretsiz</div>
-      <ul class="plist">
-        <li>Ayda 5 takas hakkı</li>
-        <li>30 gün yayında kalma</li>
-        <li>Temel mesajlaşma</li>
-        <li>Fotoğraf yükleme</li>
-        <li>Takas önerileri</li>
-      </ul>
-      <button class="btn disabled">Mevcut Paket</button>
-    </article>
-
-    <article class="pricecard price-pro">
-      <div class="chip info">En Popüler</div>
-      <h3>Pro Aylık</h3>
-      <div class="price"><span class="currency">₺</span>99<span class="period">/aylık</span></div>
-      <ul class="plist">
-        <li>Sınırsız takas</li>
-        <li>Öncelikli destek</li>
-        <li>Gelişmiş istatistikler</li>
-        <li>Onaylı takas rozeti</li>
-        <li>Video yükleme, otomatik yenileme</li>
-      </ul>
-      <button class="btn primary">Paketi Seç</button>
-    </article>
-
-    <article class="pricecard price-boost">
-      <h3>Öne Çıkar</h3>
-      <div class="price"><span class="currency">₺</span>15<span class="period">/günlük</span></div>
-      <ul class="plist">
-        <li>Ana sayfa gösterimi</li>
-        <li>Kategori üstü listeleme</li>
-        <li>Özel görseller</li>
-        <li>Artırılmış görüntülenme</li>
-        <li>Hızlı takas garantisi</li>
-      </ul>
-      <button class="btn">Paketi Seç</button>
-    </article>
-  </div>
+  <!-- JS dolduracak -->
+  <div id="pricing" class="grid pricing"></div>
 
   <p class="muted center small">Tüm paketlerde KYC doğrulama ve moderasyon hizmeti dahildir.</p>
 </section>
+
 
 <!-- PLATFORM ÖZELLİKLERİ (demo paneller) -->
 <section class="container section">
@@ -138,21 +99,26 @@
 <!-- FOOTER PARTIAL -->
 <div data-include="partials/footer.html"></div>
 
-<!-- JS: doğru sıra -->
-<script src="js/partials.js"></script>
-<script src="js/config.js"></script>
-<script src="js/fav.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/header.js"></script>
+ <!-- JS: DOĞRU SIRA -->
+  <script src="js/partials.js"></script>
+  <script src="js/config.js"></script>
 
-<!-- API ÖNCE -->
-<script src="js/api.js"></script>
+  <!-- API yardımcıları ÖNCE yüklenmeli -->
+  <script src="js/api.js"></script>
 
-<!-- HOME SONRA -->
-<script src="js/home.js"></script>
+  <!-- Diğerleri sonra -->
+  <script src="js/fav.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/header.js"></script>
 
-<script>includePartials();</script>
+  <!-- (Kart liste js’in varsa burada olabilir) -->
+  <script src="/js/listing.js"></script>
+
+  <!-- Ana sayfa içeriklerini başlatan kod EN SON -->
+  <script src="js/home.js"></script>
+
+  <script>includePartials();</script>
 
 </body>
 </html>

@@ -5,89 +5,154 @@ import { authRequired } from '../mw/auth.js';
 
 const r = Router();
 
-const addDays = (n)=> new Date(Date.now() + n*24*60*60*1000);
-const fmt = (dt)=> dt.toISOString().slice(0,19).replace('T',' ');
-
-// Planları listele
-r.get('/plans', async (req,res)=>{
-  const [rows] = await pool.query(
-    `SELECT code,name,price_minor,currency,period,
-            listing_quota_month,bump_credits_month,featured_credits_month,
-            support_level,perks,is_active
-       FROM subscription_plans
-      WHERE is_active=1
-      ORDER BY price_minor ASC`
-  );
-  res.json({ ok:true, plans: rows });
-});
-
-// Abone ol (mock ödeme)
-r.post('/subscribe', authRequired, async (req,res)=>{
-  const { plan_code } = req.body || {};
-  if (!plan_code) return res.status(400).json({ ok:false, error:'plan_code_required' });
-
-  const [[plan]] = await pool.query(
-    `SELECT * FROM subscription_plans WHERE code=? AND is_active=1`,
-    [plan_code]
-  );
-  if (!plan) return res.status(404).json({ ok:false, error:'plan_not_found' });
-
-  const start = new Date();
-  const end   = addDays(plan.period === 'yearly' ? 365 : 30);
-
-  await pool.query(`
-    INSERT INTO user_subscriptions
-      (user_id, plan_id, status, current_period_start, current_period_end, auto_renew, cancel_at_period_end)
-    VALUES (?,?,?,?,?,1,0)
-  `, [req.user.id, plan.id, 'active', fmt(start), fmt(end)]);
-
-  await pool.query(`
-    INSERT INTO payments (user_id, amount_minor, currency, provider, purpose, status, meta)
-    VALUES (?,?,?,?, 'subscription', 'succeeded', JSON_OBJECT('plan_code', ?))
-  `, [req.user.id, plan.price_minor, plan.currency, process.env.PAY_PROVIDER || 'mock', plan.code]);
-
-  res.json({ ok:true, message:'subscription_activated', current_period_end: fmt(end) });
-});
-
-// İlanı öne çıkar / bump / highlight
-r.post('/promote', authRequired, async (req,res)=>{
-  const { listing_id, type='bump' } = req.body || {};
-  if(!listing_id) return res.status(400).json({ ok:false, error:'listing_id_required' });
-  if(!['bump','featured','highlight','sponsor'].includes(type))
-    return res.status(400).json({ ok:false, error:'invalid_type' });
-
-  // sahiplik kontrolü
-  const [[own]] = await pool.query(`SELECT id,seller_id FROM listings WHERE id=?`, [listing_id]);
-  if(!own || own.seller_id !== req.user.id) return res.status(403).json({ ok:false, error:'forbidden' });
-
-  const days = {
-    bump: Number(process.env.BUMP_DAYS || 0),
-    featured: Number(process.env.FEATURED_DAYS || 7),
-    highlight: Number(process.env.HIGHLIGHT_DAYS || 30),
-    sponsor: Number(process.env.FEATURED_DAYS || 7)
-  }[type];
-
-  const start = new Date();
-  const end   = addDays(days);
-
-  await pool.query(`
-    INSERT INTO listing_promotions (listing_id,user_id,type,start_at,end_at,meta)
-    VALUES (?,?,?,?,?, NULL)
-  `, [listing_id, req.user.id, type, fmt(start), fmt(end)]);
-
-  if (type === 'bump') {
-    await pool.query(`UPDATE listings SET bumped_at=NOW() WHERE id=?`, [listing_id]);
-  } else if (type === 'featured') {
-    await pool.query(`UPDATE listings SET premium_level='featured', premium_until=?, highlight=1 WHERE id=?`,
-      [fmt(end), listing_id]);
-  } else if (type === 'highlight') {
-    await pool.query(`UPDATE listings SET highlight=1 WHERE id=?`, [listing_id]);
-  } else if (type === 'sponsor') {
-    await pool.query(`UPDATE listings SET premium_level='sponsor', premium_until=? WHERE id=?`,
-      [fmt(end), listing_id]);
+// perks alanını güvenle diziye çevir
+function toPerksArray(perks, fallback = []) {
+  if (Array.isArray(perks)) return perks;
+  if (perks == null) return fallback;
+  if (typeof perks === 'string') {
+    // JSON gibi görünüyorsa parse etmeyi dene
+    const s = perks.trim();
+    if ((s.startsWith('[') && s.endsWith(']')) || (s.startsWith('"') && s.endsWith('"'))) {
+      try {
+        const j = JSON.parse(s);
+        if (Array.isArray(j)) return j;
+        if (typeof j === 'string') {
+          return j.split(/\r?\n|;|,/).map(x => x.trim()).filter(Boolean);
+        }
+      } catch { /* yut */ }
+    }
+    // değilse satır/virgül/; üzerinden böl
+    return s.split(/\r?\n|;|,/).map(x => x.trim()).filter(Boolean);
   }
+  return fallback;
+}
 
-  res.json({ ok:true, listing_id, type, until: fmt(end) });
+/** Plan listesi */
+r.get('/plans', async (_req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT id, code, name, price_minor, currency, period,
+              listing_quota_month, bump_credits_month, featured_credits_month,
+              support_level, perks, is_active
+         FROM subscription_plans
+        WHERE is_active=1
+        ORDER BY price_minor ASC, id ASC`
+    );
+    const plans = rows.map(p => ({
+      ...p,
+      perks: toPerksArray(p.perks, [
+        `Aylık ilan hakkı: ${p.listing_quota_month}`,
+        `Yükseltme kredisi: ${p.bump_credits_month}`,
+        `Öne çıkarma kredisi: ${p.featured_credits_month}`,
+        `Destek: ${p.support_level}`
+      ])
+    }));
+    res.json({ ok: true, plans });
+  } catch (e) {
+    console.error('GET /billing/plans error =>', e);
+    res.json({ ok: true, plans: [] });
+  }
+});
+
+/** Benim aboneliğim (auth) */
+r.get('/me', authRequired, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const [rows] = await pool.query(
+      `SELECT us.id, us.status, us.current_period_start, us.current_period_end,
+              sp.code, sp.name, sp.price_minor, sp.currency, sp.period,
+              sp.listing_quota_month, sp.bump_credits_month, sp.featured_credits_month,
+              sp.support_level, sp.perks
+         FROM user_subscriptions us
+         JOIN subscription_plans sp ON sp.id = us.plan_id
+        WHERE us.user_id=? AND us.status='active'
+          AND NOW() BETWEEN us.current_period_start AND us.current_period_end
+        ORDER BY us.id DESC
+        LIMIT 1`,
+      [uid]
+    );
+
+    if (!rows.length) {
+      const [[freePlan]] = await pool.query(
+        `SELECT code, name, price_minor, currency, period,
+                listing_quota_month, bump_credits_month, featured_credits_month,
+                support_level, perks
+           FROM subscription_plans
+          WHERE code='free' LIMIT 1`
+      );
+      const effective = freePlan ? {
+        ...freePlan,
+        perks: toPerksArray(freePlan.perks, [
+          `Aylık ilan hakkı: ${freePlan.listing_quota_month}`,
+          `Yükseltme kredisi: ${freePlan.bump_credits_month}`,
+          `Öne çıkarma kredisi: ${freePlan.featured_credits_month}`,
+          `Destek: ${freePlan.support_level}`
+        ])
+      } : {
+        code: 'free', name: 'Ücretsiz', price_minor: 0, currency: 'TRY', period: 'monthly',
+        listing_quota_month: Number(process.env.FREE_LISTING_QUOTA || 5),
+        bump_credits_month: 0, featured_credits_month: 0, support_level: 'none',
+        perks: [
+          `Aylık ilan hakkı: ${Number(process.env.FREE_LISTING_QUOTA || 5)}`,
+          `Yükseltme kredisi: 0`,
+          `Öne çıkarma kredisi: 0`,
+          `Destek: none`
+        ]
+      };
+      return res.json({ ok: true, subscription: null, effective_plan: effective });
+    }
+
+    const sub = rows[0];
+    const effective_plan = {
+      code: sub.code, name: sub.name,
+      price_minor: sub.price_minor, currency: sub.currency, period: sub.period,
+      listing_quota_month: sub.listing_quota_month,
+      bump_credits_month: sub.bump_credits_month,
+      featured_credits_month: sub.featured_credits_month,
+      support_level: sub.support_level,
+      perks: toPerksArray(sub.perks, [
+        `Aylık ilan hakkı: ${sub.listing_quota_month}`,
+        `Yükseltme kredisi: ${sub.bump_credits_month}`,
+        `Öne çıkarma kredisi: ${sub.featured_credits_month}`,
+        `Destek: ${sub.support_level}`
+      ])
+    };
+
+    res.json({
+      ok: true,
+      subscription: {
+        id: sub.id,
+        status: sub.status,
+        current_period_start: sub.current_period_start,
+        current_period_end: sub.current_period_end,
+        code: sub.code
+      },
+      effective_plan
+    });
+  } catch (e) {
+    console.error('GET /billing/me error =>', e);
+    res.status(200).json({
+      ok: true,
+      subscription: null,
+      effective_plan: {
+        code: 'free',
+        name: 'Ücretsiz',
+        price_minor: 0,
+        currency: 'TRY',
+        period: 'monthly',
+        listing_quota_month: Number(process.env.FREE_LISTING_QUOTA || 5),
+        bump_credits_month: 0,
+        featured_credits_month: 0,
+        support_level: 'none',
+        perks: [
+          `Aylık ilan hakkı: ${Number(process.env.FREE_LISTING_QUOTA || 5)}`,
+          `Yükseltme kredisi: 0`,
+          `Öne çıkarma kredisi: 0`,
+          `Destek: none`
+        ]
+      }
+    });
+  }
 });
 
 export default r;

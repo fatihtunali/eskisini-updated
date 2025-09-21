@@ -5,26 +5,37 @@ import { authRequired } from '../mw/auth.js';
 
 const r = Router();
 
-/* -------- helpers -------- */
-function slugify(str) {
-  return String(str || '')
-    .toLowerCase()
-    .trim()
-    .replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u')
-    .replace(/[^a-z0-9\s-]/g,'')
-    .replace(/\s+/g,'-')
-    .replace(/-+/g,'-')
-    .slice(0, 180);
-}
-
-/** Arama & listeleme (fulltext + kategori + fiyat + sıralama) */
+/**
+ * ARAMA / LİSTELEME
+ * GET /api/listings/search
+ * q, cat, min_price, max_price, sort, limit, offset,
+ * city, district, lat, lng, radius_km, condition (csv)
+ */
 r.get('/search', async (req, res) => {
-  const { q = '', cat = '', limit = 24, offset = 0, min_price, max_price, sort = 'newest' } = req.query;
+  const {
+    q = '',
+    cat = '',
+    min_price,
+    max_price,
+    sort = 'newest',
+    limit = '24',
+    offset = '0',
+    city = '',
+    district = '',
+    lat,
+    lng,
+    radius_km,
+    condition = '' // "new,like_new,good"
+  } = req.query;
+
+  const lim = Math.min(100, Math.max(1, parseInt(limit, 10) || 24));
+  const off = Math.max(0, parseInt(offset, 10) || 0);
 
   const where = ['l.status="active"'];
   const params = [];
-  let catJoin = 'JOIN categories c ON c.id = l.category_id';
+  let joinCat = 'JOIN categories c ON c.id = l.category_id';
 
+  // Kategori (slug veya ad + çocukları)
   if (cat) {
     const [[catRow]] = await pool.query(
       'SELECT id FROM categories WHERE slug=? OR name=? LIMIT 1',
@@ -34,49 +45,122 @@ r.get('/search', async (req, res) => {
       where.push('l.category_id IN (SELECT id FROM categories WHERE id=? OR parent_id=?)');
       params.push(catRow.id, catRow.id);
     } else {
-      where.push('(c.slug=? OR c.name=?)'); params.push(cat, cat);
+      where.push('(c.slug=? OR c.name=?)');
+      params.push(cat, cat);
     }
   }
 
+  // Fiyat aralığı (minor = kuruş)
+  if (min_price != null && String(min_price).trim() !== '') {
+    where.push('l.price_minor >= ?');
+    params.push(parseInt(min_price, 10) || 0);
+  }
+  if (max_price != null && String(max_price).trim() !== '') {
+    where.push('l.price_minor <= ?');
+    params.push(parseInt(max_price, 10) || 0);
+  }
+
+  // Şehir / ilçe
+  if (city) {
+    where.push('l.location_city LIKE ?');
+    params.push(`%${city}%`);
+  }
+  if (district) {
+    // district alanı yoksa description içinde bir fallback istemiyorsak atlayalım:
+    where.push('IFNULL(l.location_city,"") LIKE ?'); // basit yaklaşım
+    params.push(`%${district}%`);
+  }
+
+  // Koşul (çoklu)
+  let condSql = '';
+  const conds = String(condition)
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  if (conds.length) {
+    condSql = ` AND l.condition_grade IN (${conds.map(()=> '?').join(',')})`;
+    params.push(...conds);
+  }
+
+  // Fulltext
+  let matchSql = '';
   if (q && q.trim()) {
-    where.push('MATCH(l.title,l.description_md) AGAINST (? IN BOOLEAN MODE)');
+    matchSql = 'AND MATCH(l.title,l.description_md) AGAINST (? IN BOOLEAN MODE)';
     params.push(`${q}*`);
   }
 
-  // fiyat aralığı (minor = kuruş)
-  const min = Number.isFinite(+min_price) ? Math.max(0, parseInt(min_price,10)) : null;
-  const max = Number.isFinite(+max_price) ? Math.max(0, parseInt(max_price,10)) : null;
-  if (min != null) { where.push('l.price_minor >= ?'); params.push(min); }
-  if (max != null) { where.push('l.price_minor <= ?'); params.push(max); }
+  // Geo (yakınımda)
+  const hasGeo = lat != null && lng != null && radius_km != null
+    && String(lat).trim() !== '' && String(lng).trim() !== '' && String(radius_km).trim() !== '';
 
-  // sıralama
-  let orderBy = 'l.created_at DESC';
-  switch (String(sort)) {
-    case 'price_asc':  orderBy = 'l.price_minor ASC'; break;
-    case 'price_desc': orderBy = 'l.price_minor DESC'; break;
-    case 'popular':    orderBy = 'l.views_count DESC'; break;
-    default:           orderBy = 'l.created_at DESC'; // newest
+  // Distance hesaplayan SELECT parçası (geo varsa)
+  // MySQL Haversine (km)
+  const distExpr = hasGeo
+    ? `(
+        6371 * ACOS(
+          COS(RADIANS(?)) * COS(RADIANS(l.location_lat)) *
+          COS(RADIANS(l.location_lng) - RADIANS(?)) +
+          SIN(RADIANS(?)) * SIN(RADIANS(l.location_lat))
+        )
+       )`
+    : 'NULL';
+
+  // Geo paramlarını SELECT sırasında başa ekleyeceğiz
+  if (hasGeo) {
+    const latN = parseFloat(lat), lngN = parseFloat(lng);
+    params.unshift(latN, lngN, latN); // DİKKAT: en başa eklendi; sıraya göre bind edilecek
   }
 
-  const sql = `
+  // Ana sorgu
+  // Geo varsa distance_km alanı gelir, HAVING ile yarıçap uygulayacağız
+  const baseSql = `
     SELECT
+      ${distExpr} AS distance_km,
       l.id, l.title, l.slug,
-      l.price_minor, l.currency, l.location_city,
-      l.favorites_count, l.premium_level, l.premium_until, l.highlight,
+      l.price_minor, l.currency,
+      l.location_city,
+      l.premium_level, l.premium_until, l.highlight,
+      l.favorites_count,
       (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS cover
     FROM listings l
-    ${catJoin}
+    ${joinCat}
     ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-    ORDER BY ${orderBy}
-    LIMIT ? OFFSET ?`;
+    ${matchSql}
+    ${condSql}
+    ${hasGeo ? 'AND l.location_lat IS NOT NULL AND l.location_lng IS NOT NULL' : ''}
+  `;
 
-  params.push(Math.min(100, Number(limit)), Math.max(0, Number(offset)));
-  const [rows] = await pool.query(sql, params);
-  res.json({ ok: true, listings: rows });
+  // Sıralama
+  let orderBy = 'ORDER BY l.created_at DESC';
+  if (sort === 'price_asc') orderBy = 'ORDER BY l.price_minor ASC';
+  if (sort === 'price_desc') orderBy = 'ORDER BY l.price_minor DESC';
+  if (sort === 'popular') orderBy = 'ORDER BY l.views_count DESC';
+  if (sort === 'nearest' && hasGeo) orderBy = 'ORDER BY distance_km ASC';
+
+  // Geo varsa HAVING ile yarıçap uygula
+  const having = hasGeo ? 'HAVING distance_km IS NOT NULL AND distance_km <= ?' : '';
+  const tailParams = [];
+  if (hasGeo) tailParams.push(parseFloat(radius_km));
+
+  const sql = `
+    ${baseSql}
+    ${having}
+    ${orderBy}
+    LIMIT ? OFFSET ?
+  `;
+
+  const finalParams = [...params, ...tailParams, lim, off];
+
+  try {
+    const [rows] = await pool.query(sql, finalParams);
+    res.json({ ok: true, listings: rows });
+  } catch (e) {
+    console.error('GET /listings/search error =>', e);
+    res.status(400).json({ ok: false, error: e.message });
+  }
 });
 
-/* -------- my listings (auth) -------- */
-/** GET /api/listings/my?page=&size= */
+/** İLANLARIM (AUTH) */
 r.get('/my', authRequired, async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page || '1', 10));
   const size = Math.min(50, Math.max(1, parseInt(req.query.size || '12', 10)));
@@ -90,18 +174,14 @@ r.get('/my', authRequired, async (req, res) => {
   const [rows] = await pool.query(
     `SELECT
         l.id, l.title, l.slug,
-        l.price_minor AS price, l.currency,
-        l.premium_level, l.premium_until, l.bumped_at, l.highlight,
+        l.price_minor AS price,
         c.name AS category_name,
         (SELECT file_url FROM listing_images WHERE listing_id=l.id ORDER BY sort_order,id LIMIT 1) AS thumb_url,
         l.created_at
      FROM listings l
      JOIN categories c ON c.id = l.category_id
      WHERE l.seller_id = ?
-     ORDER BY
-      (l.premium_level='sponsor'  AND (l.premium_until IS NULL OR l.premium_until>NOW())) DESC,
-      (l.premium_level='featured' AND (l.premium_until IS NULL OR l.premium_until>NOW())) DESC,
-      COALESCE(l.bumped_at, l.created_at) DESC
+     ORDER BY l.id DESC
      LIMIT ? OFFSET ?`,
     [req.user.id, size, off]
   );
@@ -109,72 +189,7 @@ r.get('/my', authRequired, async (req, res) => {
   res.json({ total: cnt, page, size, items: rows });
 });
 
-/* -------- create (auth) -------- */
-/** POST /api/listings  Body: { category_slug, title, slug?, description_md?, price_minor, currency?, condition_grade?, location_city?, image_urls?[] } */
-r.post('/', authRequired, async (req, res) => {
-  try {
-    const seller_id = req.user.id;
-    let {
-      category_slug, title, slug,
-      description_md,
-      price_minor,
-      currency = 'TRY',
-      condition_grade = 'good',
-      location_city,
-      image_urls = []
-    } = req.body || {};
-
-    if (!seller_id || !category_slug || !title || price_minor == null) {
-      return res.status(400).json({ ok: false, error: 'Eksik alan' });
-    }
-
-    price_minor = Number(price_minor);
-    if (!Number.isFinite(price_minor) || price_minor < 0) {
-      return res.status(400).json({ ok:false, error:'price_minor_invalid' });
-    }
-
-    const [[cat]] = await pool.query('SELECT id FROM categories WHERE slug=? LIMIT 1', [category_slug]);
-    if (!cat) return res.status(400).json({ ok: false, error: 'Kategori yok' });
-
-    slug = (slug && String(slug).trim()) || slugify(title);
-    if (!slug) return res.status(400).json({ ok:false, error:'slug_generate_failed' });
-
-    const [rs] = await pool.query(
-      `INSERT INTO listings
-         (seller_id,category_id,title,slug,description_md,price_minor,currency,condition_grade,location_city,allow_trade,status,created_at,updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?, 1, 'active', NOW(), NOW())`,
-      [
-        seller_id,
-        cat.id,
-        String(title).trim(),
-        slug,
-        description_md || '',
-        price_minor,
-        String(currency || 'TRY').toUpperCase(),
-        condition_grade,
-        location_city || null
-      ]
-    );
-
-    const listingId = rs.insertId;
-
-    if (Array.isArray(image_urls) && image_urls.length) {
-      const values = image_urls.map((u, i) => [listingId, String(u), null, i + 1]);
-      await pool.query(
-        'INSERT INTO listing_images (listing_id,file_url,thumb_url,sort_order) VALUES ?',
-        [values]
-      );
-    }
-
-    res.json({ ok: true, id: listingId, slug });
-  } catch (e) {
-    console.error('POST /listings error =>', e);
-    res.status(400).json({ ok: false, error: e.message });
-  }
-});
-
-/* -------- detail -------- */
-/** GET /api/listings/:slug */
+/** DETAY (slug) */
 r.get('/:slug', async (req, res) => {
   const { slug } = req.params;
   const [[row]] = await pool.query(

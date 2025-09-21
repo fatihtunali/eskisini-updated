@@ -14,6 +14,9 @@
     .filters input,.filters select{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px}
     .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
     .muted{color:#6b7280}
+    /* Kart medyasını sabitle */
+    .card .media{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:10px;background:#eef2f7}
+    .card .media > img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
   </style>
 </head>
 <body>
@@ -36,6 +39,7 @@
             <option value="">Tümü</option>
           </select>
         </label>
+
         <div class="grid two" style="gap:8px">
           <label class="field">
             <span>Min ₺</span>
@@ -46,7 +50,29 @@
             <input id="f_max" type="number" min="0" step="1" placeholder="100000">
           </label>
         </div>
-        <button class="btn primary" id="apply">Uygula</button>
+
+        <!-- Lokasyon (opsiyonel) -->
+<label class="field">
+  <span>Şehir</span>
+  <select id="f_city">
+    <option value="">Tümü</option>
+  </select>
+</label>
+        <div class="grid two" style="gap:8px">
+          <label class="field">
+            <span>Yarıçap (km)</span>
+            <input id="f_radius" type="number" min="1" step="1" placeholder="50">
+          </label>
+          <div class="field">
+            <span>&nbsp;</span>
+            <button class="btn" id="btnUseMyLoc" type="button">Konumumu kullan</button>
+          </div>
+        </div>
+        <!-- gizli koordinatlar -->
+        <input type="hidden" id="f_lat">
+        <input type="hidden" id="f_lng">
+
+        <button class="btn primary" id="apply" type="button">Uygula</button>
       </aside>
 
       <!-- SAĞ: SONUÇLAR -->
@@ -72,9 +98,12 @@
 
   <div data-include="partials/footer.html"></div>
 
+  <!-- SIRA ÖNEMLİ -->
   <script src="/js/partials.js"></script>
   <script src="/js/config.js"></script>
+  <script src="/js/api.js"></script>   <!-- API ÖNCE YÜKLENECEK -->
   <script src="/js/fav.js"></script>
+   <script src="/js/cities-tr.js"></script> <!-- <<< yeni -->
   <script src="/js/search.js"></script>
   <script>includePartials();</script>
 </body>

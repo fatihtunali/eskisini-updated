@@ -375,3 +375,75 @@ a:hover{ color:#111827; }
 
 /* Ürün “product” kartında da aynı media yapısı kullanıldı */
 .product { display:block; text-decoration:none; color:inherit; }
+
+/* --- Pricing grid --- */
+.grid.pricing{
+  display:grid;
+  gap:20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items:stretch;
+}
+
+/* --- Price card layout --- */
+.pricecard{
+  position:relative;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:20px;
+  box-shadow:var(--shadow);
+  /* Rozet için üstten boşluk aç */
+  padding:52px 20px 20px;
+  min-height: 280px;
+
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* Rozet: sabit köşe, başlıkla çakışmasın */
+.pricecard .chip{
+  position:absolute;
+  top:12px;
+  left:16px;
+  font-size:.8rem;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:#f8fafc;
+}
+.pricecard .chip.info{ background:#eef2ff; border-color:#c7d2fe; }
+.pricecard .chip.success{ background:#e6fbea; border-color:#bbf7d0; }
+
+/* Başlık & fiyat */
+.pricecard h3{
+  margin:0;
+  font-size:1.1rem;
+  font-weight:700;
+}
+.price{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  font-size:2rem;
+  font-weight:800;
+  margin:4px 0 8px;
+}
+.price .period{
+  font-size:1rem;
+  font-weight:500;
+  color:var(--muted);
+}
+
+/* İçerik listesini esnet, butonu alta it */
+.plist{
+  margin:0;
+  padding-left:18px; /* bullet içeri girsin */
+  flex:1;            /* boşluğu doldur */
+}
+.pricecard .btn{
+  align-self:flex-start;
+}
+
+/* (Genel) Kart görsel ölçüsü sabit kalsın – mevcut kuralın aynısıysa dokunma */
+.card .media{ position:relative; width:100%; aspect-ratio:4/3; overflow:hidden; border-radius:10px; background:#eef2f7; }
+.card .media > img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
