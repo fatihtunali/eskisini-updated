@@ -476,3 +476,53 @@ footer .container{
 
 /* ince ayraç */
 .qa-sep { border: 0; border-top: 1px solid #e5e7eb; margin: 6px 0; }
+
+
+/* HEADER yerleşim */
+.hdr .topbar{
+  display:flex; align-items:center; gap:16px; min-height:72px;
+}
+.hdr .brand{display:flex; align-items:center; gap:8px; text-decoration:none; color:#111827}
+.hdr .search{flex:1; display:flex; gap:8px; justify-content:center}
+.hdr .search input{width:100%; max-width:480px}
+
+/* sağ taraf nav’lar */
+.usernav{margin-left:auto; display:flex; align-items:center; gap:10px; position:relative}
+
+/* kullanıcı çipi (dropdown tetikleyici) */
+.user-chip{
+  display:flex; align-items:center; gap:8px;
+  background:#fff; border:1px solid #e5e7eb; border-radius:999px;
+  padding:6px 10px; cursor:pointer;
+}
+.user-chip .avatar{font-size:14px}
+.user-chip .name{font-weight:600}
+.badge-verified{display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; background:#eef6ff}
+
+/* dropdown menü */
+.user-menu{
+  position:absolute; right:0; top:100%;
+  margin:8px 0 0; padding:8px;
+  background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+  min-width:220px; list-style:none;
+  box-shadow:0 10px 25px rgba(0,0,0,.08);
+  display:none; z-index:50;
+}
+.user-menu li{margin:0; padding:0}
+.user-menu a, .user-menu button.link{
+  display:block; width:100%; text-align:left;
+  padding:9px 10px; border-radius:8px; text-decoration:none; color:#111827;
+}
+.user-menu a:hover, .user-menu button.link:hover{background:#f3f4f6}
+
+/* açıkken görünür */
+.usernav.open .user-menu{display:block}
+
+/* madde işaretlerini kesin kaldır */
+.user-menu { list-style-type:none; }
+
+/* gizli nav kesinlikle görünmesin */
+.usernav[hidden] { display: none !important; }
+
+/* oturum açıldığında misafir nav’ı gizle */
+.topbar.auth #guestNav { display: none !important; }
