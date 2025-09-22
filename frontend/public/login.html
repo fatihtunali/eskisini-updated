@@ -17,34 +17,35 @@
   <div data-include="partials/header.html"></div>
 
   <!-- ORTALANMIŞ KART -->
-  <main class="container section">
-    <div class="auth-wrap">
-      <form id="f" class="auth-card" novalidate data-auth="login">
-        <h1 class="auth-title">Giriş yap</h1>
-        <p class="auth-sub">Hesabınıza erişmek için e-posta adresinizi ve şifrenizi girin.</p>
+  <section class="auth container">
+  <h1 class="auth-title">Giriş yap</h1>
+  <p class="auth-sub">Hesabınıza erişmek için e-posta adresinizi ve şifrenizi girin.</p>
 
-        <label class="field">
-          <span>E-posta</span>
-<input type="email" name="email" placeholder="ornek@alan.com" required autofocus aria-describedby="emailHint">
-<small id="emailHint" class="hint">Kayıt olurken kullandığınız e-posta adresi</small>
+  <form id="loginForm" class="form-card auth-form" novalidate>
+    <div id="loginMsg" class="form-msg" hidden></div>
 
-        </label>
-
-        <label class="field">
-          <span>Şifre</span>
-          <input type="password" name="password" placeholder="••••••••" minlength="6" required>
-          <small class="hint">En az 6 karakter</small>
-        </label>
-
-        <button class="btn primary full" type="submit">Giriş yap</button>
-
-        <p class="auth-alt">
-          Hesabın yok mu?
-          <a href="/register.html">Kayıt ol</a>
-        </p>
-      </form>
+    <div class="form-field form-span-2">
+      <label for="loginEmail">E-posta <span class="req">*</span></label>
+      <input id="loginEmail" name="email" type="email" autocomplete="email"
+             placeholder="ornek@alan.com" required />
     </div>
-  </main>
+
+    <div class="form-field form-span-2">
+      <label for="loginPass">Şifre <span class="req">*</span></label>
+      <div class="pw-wrap">
+        <input id="loginPass" name="password" type="password" autocomplete="current-password"
+               placeholder="En az 6 karakter" minlength="6" required />
+        <button type="button" class="pw-toggle" aria-label="Şifreyi göster">👁</button>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-primary">Giriş yap</button>
+      <a class="link-soft" href="/register.html">Hesabın yok mu? Kayıt ol</a>
+    </div>
+  </form>
+</section>
+
 
   <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>

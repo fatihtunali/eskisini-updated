@@ -25,10 +25,9 @@ await pingDb();
 const app = express();
 
 // --- güvenli CORS köken listesi ---
-const ORIGINS = (process.env.CORS_ORIGIN || 'http://localhost:5500,http://127.0.0.1:5500')
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
+const ORIGINS = 'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000'
+  .split(',').map(s=>s.trim()).filter(Boolean);
+
 
 // Prod’da proxy arkası için (secure cookie/SameSite=None senaryosu)
 if (process.env.COOKIE_SECURE === 'true') {

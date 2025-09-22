@@ -2,16 +2,16 @@
 (function () {
   const API_BASE = (window.APP && window.APP.API_BASE) || '';
   const $  = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
-  // ---------- helpers ----------
+  // ---- helpers ----
   const toMinor = (v) => {
     if (v == null) return null;
     const str = String(v).trim().replace(/\./g, '').replace(',', '.'); // "1.234,56" -> "1234.56"
     const num = Number(str);
-    if (!isFinite(num)) return null;
+    if (!Number.isFinite(num)) return null;
     return Math.round(num * 100);
   };
+
   const slugify = (s) => String(s || '')
     .toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -42,19 +42,22 @@
     } catch { return null; }
   }
 
-  // ---------- categories ----------
+  // ---- categories ----
   async function loadMainCats(selectEl) {
+    if (!selectEl) return;
     selectEl.innerHTML = `<option value="">Seçiniz…</option>`;
-    const { ok, categories=[] } = await fetchJSON(`${API_BASE}/api/categories/main`);
-    if (ok) {
-      categories.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.slug;
-        opt.textContent = c.name;
-        selectEl.appendChild(opt);
-      });
-    }
-    // Diğer/elle
+    try {
+      const { ok, categories = [] } = await fetchJSON(`${API_BASE}/api/categories/main`);
+      if (ok && Array.isArray(categories)) {
+        for (const c of categories) {
+          const opt = document.createElement('option');
+          opt.value = c.slug;
+          opt.textContent = c.name;
+          selectEl.appendChild(opt);
+        }
+      }
+    } catch (e) { console.warn('categories/main', e); }
+
     const other = document.createElement('option');
     other.value = '__other';
     other.textContent = 'Diğer / Elle gir';
@@ -62,140 +65,187 @@
   }
 
   async function loadChildCats(mainSlug, selectEl) {
+    if (!selectEl) return;
     selectEl.innerHTML = `<option value="">Alt kategori (opsiyonel)</option>`;
     if (!mainSlug || mainSlug === '__other') {
       selectEl.disabled = true;
       return;
     }
-    const { ok, children=[] } = await fetchJSON(`${API_BASE}/api/categories/children/${encodeURIComponent(mainSlug)}`);
-    if (ok && children.length) {
-      children.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.slug;
-        opt.textContent = c.name;
-        selectEl.appendChild(opt);
-      });
-      selectEl.disabled = false;
-    } else {
+    try {
+      const { ok, children = [] } = await fetchJSON(`${API_BASE}/api/categories/children/${encodeURIComponent(mainSlug)}`);
+      if (ok && children.length) {
+        for (const c of children) {
+          const opt = document.createElement('option');
+          opt.value = c.slug;
+          opt.textContent = c.name;
+          selectEl.appendChild(opt);
+        }
+        selectEl.disabled = false;
+      } else {
+        selectEl.disabled = true;
+      }
+    } catch (e) {
+      console.warn('categories/children', e);
       selectEl.disabled = true;
     }
   }
 
-  function getSelectedCategorySlug() {
-    const main = $('#catMain');
-    const child = $('#catChild');
-    const customWrap = $('#customSlugWrap');
-    const custom = $('#customSlug');
-
-    const childSlug = child && !child.disabled ? (child.value || '') : '';
+  function getSelectedCategorySlug(catMain, catChild, customInput) {
+    const childSlug = (catChild && !catChild.disabled && catChild.value) ? catChild.value : '';
     if (childSlug) return childSlug;
-
-    const mainSlug = main ? (main.value || '') : '';
+    const mainSlug = (catMain && catMain.value) ? catMain.value : '';
     if (mainSlug && mainSlug !== '__other') return mainSlug;
-
-    const customSlug = custom ? custom.value.trim() : '';
+    const customSlug = (customInput && customInput.value) ? customInput.value.trim() : '';
     return customSlug || '';
   }
 
-  // ---------- form bind ----------
+  // ---- bind ----
   function bind() {
-    const form = $('#f');
+    // Form id’leri için fallback: #sellForm veya #f
+    const form = $('#sellForm') || $('#f');
     if (!form || form.dataset.bound) return;
     form.dataset.bound = '1';
 
-    const msg = $('#msg');
     const submitBtn = form.querySelector('[type="submit"]');
+    const msg = $('#msg');
 
-    // Kategori selectlerini hazırla
-    const catMain  = $('#catMain');
-    const catChild = $('#catChild');
-    const customWrap = $('#customSlugWrap');
-    const custom    = $('#customSlug');
+    // ID fallback’leri: #mainCat/#subCat veya #catMain/#catChild
+    const catMain  = $('#mainCat') || $('#catMain');
+    const catChild = $('#subCat')  || $('#catChild');
+    const customWrap = $('#customSlugWrap'); // varsa
+    const customSlug = $('#customSlug');     // varsa
 
-    // Ana kategorileri doldur
-    loadMainCats(catMain).catch(console.error);
+    // Title/slug
+    const titleEl = $('#title');
+    const slugEl  = $('#slug');
 
-    // Ana kategori değişince altları ve custom alanını yönet
+    // Price
+    const priceInput = $('#price');
+    const priceMinorHidden = $('#price_minor');
+
+    // Images
+    const images = $('#images');
+    const imgCount = $('#imgCount');
+
+    // ---- UI helpers ----
+    // Slug önerisi
+    if (titleEl && slugEl) {
+      titleEl.addEventListener('input', () => {
+        if (!slugEl.value) slugEl.placeholder = slugify(titleEl.value);
+      });
+    }
+
+    // Fiyat -> minor
+    if (priceInput && priceMinorHidden) {
+      const prettify = (txt) => {
+        let s = (txt || '').toString()
+          .replace(/[^\d.,]/g,'')
+          .replace(/,{2,}/g, ',')
+          .replace(/\.(?=.*\.)/g,''); // tek nokta
+        return s;
+      };
+      priceInput.addEventListener('input', () => {
+        priceInput.value = prettify(priceInput.value);
+        priceMinorHidden.value = toMinor(priceInput.value) ?? '';
+      });
+    }
+
+    // Görsel sayaç
+    if (images && imgCount) {
+      const recalc = () => {
+        const n = images.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).length;
+        imgCount.textContent = String(n);
+      };
+      images.addEventListener('input', recalc);
+      recalc();
+    }
+
+    // Kategoriler
+    if (catMain) loadMainCats(catMain).catch(console.error);
     catMain?.addEventListener('change', async () => {
       const v = catMain.value;
-      customWrap.style.display = (v === '__other') ? '' : 'none';
+      if (customWrap) customWrap.style.display = (v === '__other') ? '' : 'none';
+      if (!catChild) return;
       if (v === '__other') {
         catChild.innerHTML = `<option value="">Önce ana kategoriyi seçin</option>`;
         catChild.disabled = true;
         return;
       }
-      await loadChildCats(v, catChild).catch(console.error);
+      await loadChildCats(v, catChild);
     });
 
+    // Submit
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (msg) msg.textContent = '';
       if (submitBtn?.dataset.busy === '1') return;
-      if (submitBtn) { submitBtn.dataset.busy = '1'; submitBtn.disabled = true; }
 
       try {
-        // login kontrolü
+        submitBtn && (submitBtn.dataset.busy = '1', submitBtn.disabled = true);
+
+        // auth
         const user = await getMe();
-        if (!user) {
-          const u = new URL('/login.html', location.origin);
-          u.searchParams.set('redirect', location.pathname + location.search);
-          location.href = u.toString();
-          return;
-        }
+        if (!user) return; // 401 yönlendirmesi fetchJSON’da
 
         const fd = new FormData(form);
 
-        // category_slug: child -> main -> custom
-        const category_slug = getSelectedCategorySlug();
+        // kategori slug
+        const category_slug = getSelectedCategorySlug(catMain, catChild, customSlug);
         if (!category_slug) {
           alert('Lütfen bir kategori seçin veya slug girin.');
           return;
         }
 
-        // price -> price_minor
+        // fiyat
         let price_minor = null;
         if (fd.has('price_minor') && String(fd.get('price_minor')).trim() !== '') {
           const pm = Number(String(fd.get('price_minor')).trim());
           price_minor = Number.isFinite(pm) ? pm : null;
         } else if (fd.has('price')) {
           price_minor = toMinor(fd.get('price'));
+        } else if (priceInput) {
+          price_minor = toMinor(priceInput.value);
         }
         if (!Number.isFinite(price_minor) || price_minor <= 0) {
           alert('Lütfen geçerli bir fiyat girin.');
           return;
         }
 
-        // zorunlular
-        const title = String(fd.get('title') || '').trim();
+        // başlık
+        const title = String(fd.get('title') || titleEl?.value || '').trim();
         if (!title) {
           alert('Başlık zorunludur.');
           return;
         }
 
-        // slug yoksa üret
-        let slug = String(fd.get('slug') || '').trim();
+        // slug
+        let slug = String(fd.get('slug') || slugEl?.value || '').trim();
         if (!slug) slug = slugify(title);
 
-        // görseller
-        const image_urls = String(fd.get('image_urls')||'')
+        // diğer alanlar
+        const image_urls = String(fd.get('image_urls') || images?.value || '')
           .split(/[\n,]/).map(s=>s.trim()).filter(Boolean);
 
         const payload = {
           category_slug,
           title,
           slug,
-          description_md: String(fd.get('description_md') || ''),
+          description_md: String(fd.get('description_md') || '').trim(),
           price_minor,
           currency: (fd.get('currency') || 'TRY').toString().trim().toUpperCase() || 'TRY',
           condition_grade: String(fd.get('condition_grade') || 'good'),
           location_city: String(fd.get('location_city') || ''),
+          allow_trade: fd.has('allow_trade') ? true : false,
           image_urls
         };
 
         const r = await fetch(`${API_BASE}/api/listings`, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           body: JSON.stringify(payload)
         });
         const data = await r.json().catch(() => ({}));
@@ -203,9 +253,9 @@
           throw new Error(data.error || data.message || `HTTP ${r.status}`);
         }
 
-        alert('İlan oluşturuldu #' + data.id);
-        const detailUrl = payload.slug
-          ? `/listing.html?slug=${encodeURIComponent(payload.slug)}`
+        alert('İlan oluşturuldu #' + (data.id ?? ''));
+        const detailUrl = slug
+          ? `/listing.html?slug=${encodeURIComponent(slug)}`
           : `/listing.html?id=${encodeURIComponent(data.id)}`;
         location.href = detailUrl;
 
@@ -213,15 +263,14 @@
         console.error(err);
         alert('İlan oluşturulamadı: ' + (err.message || 'Hata'));
       } finally {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.dataset.busy = '0'; }
+        submitBtn && (submitBtn.disabled = false, submitBtn.dataset.busy = '0');
       }
     });
   }
 
-  function boot() {
-    bind();
-  }
+  function boot() { bind(); }
 
+  // partials destekliyse
   document.addEventListener('partials:loaded', boot);
   window.addEventListener('DOMContentLoaded', () => {
     if (typeof includePartials === 'function') includePartials();

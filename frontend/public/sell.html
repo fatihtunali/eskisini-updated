@@ -16,90 +16,107 @@
 
 <div data-include="partials/header.html"></div>
 
-<main class="container section">
-  <h1 class="center">Yeni İlan</h1>
+<!-- Yeni İlan -->
+<section class="sell-form container">
+  <h1 class="sell-title">Yeni İlan</h1>
 
-  <form id="f" class="card pad form" novalidate>
-    <!-- KATEGORİ SEÇİMİ -->
-    <div class="grid two">
-      <label class="field">
-        <span>Ana Kategori <b>*</b></span>
-        <select id="catMain" required>
+  <form id="sellForm" class="form-card" novalidate>
+    <div class="form-grid">
+      <!-- Kategori -->
+      <div class="form-field">
+        <label for="mainCat">Ana Kategori <span class="req">*</span></label>
+        <select id="mainCat" name="category_main" required>
           <option value="">Seçiniz…</option>
-          <!-- JS dolduracak -->
-          <option value="__other">Diğer / Elle gir</option>
+          <!-- JS ile dolduruluyor -->
         </select>
-        <small class="hint">Önce ana kategoriyi seçin</small>
-      </label>
+        <p class="help">Önce ana kategoriyi seçin</p>
+      </div>
 
-      <label class="field">
-        <span>Alt Kategori</span>
-        <select id="catChild" disabled>
-          <option value="">Önce ana kategoriyi seçin</option>
+      <div class="form-field">
+        <label for="subCat">Alt Kategori</label>
+        <select id="subCat" name="category_sub" disabled>
+          <option value="">Önce ana kategori</option>
         </select>
-        <small class="hint">Varsa alt kategori seçin</small>
-      </label>
+        <p class="help">Varsa alt kategori seçin</p>
+      </div>
+
+      <!-- Başlık & Slug -->
+      <div class="form-field">
+        <label for="title">Başlık <span class="req">*</span></label>
+        <input id="title" name="title" type="text" placeholder="İlan başlığı" required />
+        <p class="help">Kısa ve açıklayıcı bir başlık yazın</p>
+      </div>
+
+      <div class="form-field">
+        <label for="slug">URL Slug <small>(opsiyonel)</small></label>
+        <input id="slug" name="slug" type="text" placeholder="Boş bırakırsanız otomatik oluşur" />
+      </div>
+
+      <!-- Açıklama -->
+      <div class="form-field form-span-2">
+        <label for="desc">Açıklama</label>
+        <textarea id="desc" name="description_md" rows="4" placeholder="Ürünün durumunu, aksesuarlarını vb. belirtin"></textarea>
+      </div>
+
+      <!-- Fiyat & Para Birimi -->
+      <div class="form-field">
+        <label for="price">Fiyat (TL) <span class="req">*</span></label>
+        <input id="price" name="price_display" type="text" inputmode="decimal" placeholder="Örn: 12.499,90" required />
+        <input id="price_minor" name="price_minor" type="hidden" />
+        <p class="help">Noktayı binlik, virgülü kuruş için kullanabilirsiniz</p>
+      </div>
+
+      <div class="form-field">
+        <label for="currency">Para Birimi</label>
+        <select id="currency" name="currency">
+          <option value="TRY" selected>TRY</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+
+      <!-- Durum & Şehir -->
+      <div class="form-field">
+        <label for="condition">Ürün Durumu</label>
+        <select id="condition" name="condition_grade">
+          <option value="new">new (sıfır)</option>
+          <option value="like_new">like_new (çok iyi)</option>
+          <option value="good" selected>good (iyi)</option>
+          <option value="fair">fair (orta)</option>
+          <option value="poor">poor (zayıf)</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="city">Şehir</label>
+        <input id="city" name="location_city" type="text" placeholder="Örn: İstanbul" />
+      </div>
+
+      <!-- Görseller -->
+      <div class="form-field form-span-2">
+        <label for="images">Görsel URL’leri</label>
+        <textarea id="images" name="image_urls" rows="4" placeholder="Her satıra bir URL yazın"></textarea>
+        <div class="help-row">
+          <p class="help">İlk görsel kapak olarak kullanılacak</p>
+          <p class="help"><span id="imgCount">0</span> görsel</p>
+        </div>
+      </div>
+
+      <!-- Takas -->
+      <div class="form-field">
+        <label class="checkbox">
+          <input type="checkbox" id="allow_trade" name="allow_trade" checked />
+          Takasa uygun
+        </label>
+      </div>
     </div>
 
-    <!-- Elle slug (yedek) -->
-    <label class="field" id="customSlugWrap" style="display:none">
-      <span>Kategori Slug (elle)</span>
-      <input id="customSlug" placeholder="örn: akilli-telefonlar">
-      <small class="hint">Listede yoksa buraya slug yazabilirsiniz</small>
-    </label>
-
-    <label class="field">
-      <span>Başlık <b>*</b></span>
-      <input name="title" placeholder="İlan başlığı" required>
-    </label>
-
-    <label class="field">
-      <span>URL Slug (opsiyonel)</span>
-      <input name="slug" placeholder="Boş bırakılırsa otomatik oluşturulur">
-    </label>
-
-    <label class="field">
-      <span>Açıklama</span>
-      <textarea name="description_md" rows="5" placeholder="Ürünün durumunu, aksesuarlarını vb. belirtin"></textarea>
-    </label>
-
-    <div class="grid two">
-      <label class="field">
-        <span>Fiyat (TL) <b>*</b></span>
-        <input name="price" placeholder="Örn: 12.499 veya 12.499,90" required>
-        <small class="hint">Noktayı binlik, virgülü kuruş için kullanabilirsiniz</small>
-      </label>
-
-      <label class="field">
-        <span>Para Birimi</span>
-        <input name="currency" value="TRY">
-      </label>
-    </div>
-
-    <div class="grid two">
-      <label class="field">
-        <span>Ürün Durumu</span>
-        <input name="condition_grade" value="good">
-      </label>
-
-      <label class="field">
-        <span>Şehir</span>
-        <input name="location_city" placeholder="Örn: İstanbul">
-      </label>
-    </div>
-
-    <label class="field">
-      <span>Görsel URL'leri</span>
-      <textarea name="image_urls" rows="3" placeholder="Her satıra bir URL veya virgülle ayırın"></textarea>
-      <small class="hint">İlk görsel kapak olarak kullanılır</small>
-    </label>
-
-    <div style="display:flex; gap:8px; align-items:center;">
-      <button class="btn primary" type="submit">Kaydet</button>
-      <span id="msg" class="muted"></span>
+    <div class="form-actions">
+      <button type="submit" class="btn-primary">Kaydet</button>
     </div>
   </form>
-</main>
+</section>
+
 
 <div data-include="partials/footer.html"></div>
 
@@ -108,6 +125,7 @@
 <script src="js/header.js"></script>
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
+<script src="js/auth.js" defer></script>
 <script src="js/sell.js"></script>
 <script>includePartials();</script>
 </body>

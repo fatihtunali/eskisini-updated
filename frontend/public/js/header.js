@@ -1,36 +1,23 @@
-// header.js — CSP uyumlu, partial yüklendikten sonra da çalışır
+// header.js (daha toleranslı)
 (function () {
   const MAX_WAIT_MS = 8000;
 
   function bindHeaderSearch(root = document) {
-    const get = root.getElementById ? root.getElementById.bind(root) : document.getElementById.bind(document);
-    const btn = get('btnSearch');
-    const inp = get('q');
+    const qEl = root.getElementById('q') 
+             || root.querySelector('.hdr .search input[type="search"], header .search input[type="search"]');
 
-    if (!inp) return false;
+    const btnEl = root.getElementById('btnSearch') 
+               || root.querySelector('.hdr .search button, header .search button');
 
-    // ARIA / rol ipucu
-    try {
-      const searchWrap = inp.closest('.search');
-      if (searchWrap && !searchWrap.getAttribute('role')) searchWrap.setAttribute('role', 'search');
-      if (!inp.getAttribute('aria-label') && !inp.getAttribute('placeholder')) {
-        inp.setAttribute('aria-label', 'Ara');
-      }
-    } catch(_) {}
+    if (!qEl) return false;
 
     const go = () => {
-      const q = (inp.value || '').trim();
-      // Alt dizinlerde de çalışsın:
+      const q = (qEl.value || '').trim();
       const u = new URL('category.html', location.href);
-
-      // Mevcut parametreleri (utm, lang, vs.) taşıyalım:
       const curr = new URL(location.href);
-      curr.searchParams.forEach((v, k) => {
-        if (!['q'].includes(k)) u.searchParams.set(k, v);
-      });
-
+      curr.searchParams.forEach((v, k) => { if (k !== 'q') u.searchParams.set(k, v); });
       if (q) u.searchParams.set('q', q);
-      // Aynı sayfadaysak sadece parametreyi güncelle:
+
       if (location.pathname.endsWith('/category.html') && location.search !== u.search) {
         location.search = u.search;
       } else {
@@ -38,37 +25,26 @@
       }
     };
 
-    // Form submit desteği (ileride <form> olursa)
-    const form = inp.closest('form');
+    const form = qEl.closest('form');
     if (form && !form.dataset.bound) {
       form.addEventListener('submit', (e) => { e.preventDefault(); go(); });
       form.dataset.bound = '1';
     }
 
-    if (btn && !btn.dataset.bound) {
-      btn.addEventListener('click', go);
-      btn.dataset.bound = '1';
+    if (btnEl && !btnEl.dataset.bound) {
+      btnEl.addEventListener('click', go);
+      btnEl.dataset.bound = '1';
     }
-    if (!inp.dataset.bound) {
-      inp.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          go();
-        }
-      });
-      inp.dataset.bound = '1';
+    if (!qEl.dataset.bound) {
+      qEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
+      qEl.dataset.bound = '1';
     }
 
-    // Küçük UX: "/" ile aramaya odaklan
     if (!document.body.dataset.searchHotkey) {
       document.addEventListener('keydown', (e) => {
-        if (
-          e.key === '/' &&
-          !e.altKey && !e.ctrlKey && !e.metaKey &&
-          document.activeElement !== inp
-        ) {
+        if (e.key === '/' && !e.altKey && !e.ctrlKey && !e.metaKey && document.activeElement !== qEl) {
           e.preventDefault();
-          inp.focus();
+          qEl.focus();
         }
       });
       document.body.dataset.searchHotkey = '1';
@@ -79,7 +55,6 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     if (bindHeaderSearch()) return;
-
     const onLoaded = () => bindHeaderSearch();
     document.addEventListener('partials:loaded', onLoaded, { once: true });
 

@@ -17,70 +17,70 @@
   <div data-include="partials/header.html"></div>
 
   <!-- ORTALANMIŞ KART -->
-  <main class="container section">
-    <div class="auth-wrap">
-      <form id="f" class="auth-card" novalidate data-auth="register">
-        <h1 class="auth-title">Kayıt ol</h1>
-        <p class="auth-sub">Hızlıca hesabını oluştur, güvenle al-sat ve takas yap.</p>
+<section class="auth container">
+  <h1 class="auth-title">Kayıt ol</h1>
 
-        <div class="grid two" style="gap:12px">
-          <label class="field">
-            <span>İsim Soyad <b>*</b></span>
-            <input type="text" name="full_name" placeholder="Adınız Soyadınız" required>
-            <small class="hint">Profilinizde görünecek ad</small>
-          </label>
+  <form id="regForm" class="form-card" novalidate>
+    <div id="regMsg" class="msg" hidden></div>
 
-          <label class="field">
-            <span>Kullanıcı Adı</span>
-            <input type="text" name="username" placeholder="ornek_kullanici">
-            <small class="hint">En az 3 karakter, benzersiz olmalı</small>
-          </label>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="fullName">İsim Soyad <span class="req">*</span></label>
+        <input id="fullName" name="full_name" type="text" autocomplete="name" required />
+      </div>
+
+      <div class="form-field">
+        <label for="username">Kullanıcı Adı <span class="req">*</span></label>
+        <input id="username" name="username" type="text" minlength="3" maxlength="60" required />
+        <p class="help">En az 3 karakter, benzersiz</p>
+      </div>
+
+      <div class="form-field">
+        <label for="regEmail">E-posta <span class="req">*</span></label>
+        <input id="regEmail" name="email" type="email" autocomplete="email" required />
+      </div>
+
+      <div class="form-field">
+        <label for="phone">Telefon (E.164)</label>
+        <input id="phone" name="phone_e164" type="tel" inputmode="tel" placeholder="+905551112233" />
+      </div>
+
+      <div class="form-field">
+        <label for="regPass">Şifre <span class="req">*</span></label>
+        <div class="input-with-btn">
+          <input id="regPass" name="password" type="password" minlength="6"
+                 autocomplete="new-password" required />
+          <button type="button" class="btn-ghost" id="toggleRegPass">👁</button>
         </div>
+      </div>
 
-        <label class="field">
-          <span>E-posta <b>*</b></span>
-          <input type="email" name="email" placeholder="ornek@alan.com" required>
-          <small class="hint">Giriş ve bildirimler için kullanılacak</small>
+      <div class="form-field">
+        <label for="regPass2">Şifre (tekrar) <span class="req">*</span></label>
+        <input id="regPass2" name="password2" type="password" minlength="6"
+               autocomplete="new-password" required />
+        <p class="help">Şifre ile aynı olmalı</p>
+      </div>
+
+      <div class="form-field form-span-2">
+        <label for="tcno">TC Kimlik No <small>(opsiyonel)</small></label>
+        <input id="tcno" name="tc_no" type="text" inputmode="numeric" maxlength="11" placeholder="11 hane" />
+      </div>
+
+      <div class="form-field form-span-2">
+        <label class="checkbox">
+          <input type="checkbox" id="terms" required />
+          <span>Kullanım Şartları ve Gizlilik’i kabul ediyorum.</span>
         </label>
-
-        <div class="grid two" style="gap:12px">
-          <label class="field">
-            <span>Şifre <b>*</b></span>
-            <input type="password" name="password" placeholder="••••••••" minlength="6" required>
-            <small class="hint">En az 6 karakter (harf + rakam önerilir)</small>
-          </label>
-          <label class="field">
-            <span>Şifre (tekrar) <b>*</b></span>
-            <input type="password" name="password2" placeholder="••••••••" minlength="6" required>
-            <small class="hint">Şifre ile aynı olmalı</small>
-          </label>
-        </div>
-
-        <div class="grid two" style="gap:12px">
-          <label class="field">
-            <span>Telefon (E.164)</span>
-            <input type="tel" name="phone_e164" placeholder="+90 5xx xxx xx xx" inputmode="tel">
-            <small class="hint">Örn: +905551112233</small>
-          </label>
-
-          <label class="field">
-            <span>TC Kimlik No (opsiyonel)</span>
-            <input name="tc_no" placeholder="11 hane" pattern="\d{11}">
-            <small class="hint">KYC için hızlandırır (daha sonra da ekleyebilirsiniz)</small>
-          </label>
-        </div>
-
-        <label class="field" style="display:flex; gap:10px; align-items:flex-start">
-          <input type="checkbox" id="cb" required style="margin-top:6px">
-          <span><b>Kullanım Şartları</b> ve <b>Gizlilik</b>’i kabul ediyorum.</span>
-        </label>
-
-        <button class="btn primary full" type="submit">Hesabımı oluştur</button>
-
-        <p class="auth-alt">Zaten üye misin? <a href="/login.html">Giriş yap</a></p>
-      </form>
+      </div>
     </div>
-  </main>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-primary">Hesabımı oluştur</button>
+    </div>
+  </form>
+
+  <p class="auth-alt">Zaten üye misin? <a href="/login.html">Giriş yap</a></p>
+</section>
 
   <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>

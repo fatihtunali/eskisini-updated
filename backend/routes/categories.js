@@ -34,4 +34,23 @@ r.get('/main', async (req, res) => {
   res.json({ ok: true, categories: rows });
 });
 
+
+/** ALT KATEGORİLER — /api/categories/children/:slug */
+r.get('/children/:slug', async (req, res, next) => {
+  try {
+    const slug = req.params.slug;
+    const [[parent]] = await pool.query(
+      `SELECT id, name, slug FROM categories WHERE slug=? LIMIT 1`, [slug]
+    );
+    if (!parent) return res.status(404).json({ ok:false, error:'parent_not_found' });
+    const [children] = await pool.query(
+      `SELECT id, name, slug
+         FROM categories
+        WHERE parent_id=?
+        ORDER BY sort_order, name`, [parent.id]
+    );
+    res.json({ ok:true, parent, children });
+  } catch (e) { next(e); }
+});
+
 export default r;

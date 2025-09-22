@@ -5,6 +5,61 @@ import { authRequired } from '../mw/auth.js';
 
 const r = Router();
 
+/** CREATE listing — POST /api/listings */
+r.post('/', authRequired, async (req, res, next) => {
+  try {
+    const uid = req.user?.id;
+    if (!uid) return res.status(401).json({ ok:false, error:'unauthorized' });
+
+    let {
+      category_slug,
+      title,
+      slug,
+      description_md = null,
+      price_minor,
+      currency = 'TRY',
+      condition_grade = 'good',
+      location_city = null,
+      allow_trade = false,
+      image_urls = []
+    } = req.body || {};
+
+    if (!category_slug) return res.status(400).json({ ok:false, error:'missing_category' });
+    if (!title) return res.status(400).json({ ok:false, error:'missing_title' });
+    price_minor = Number(price_minor);
+    if (!Number.isFinite(price_minor) || price_minor <= 0) return res.status(400).json({ ok:false, error:'invalid_price' });
+
+    const [[cat]] = await pool.query(`SELECT id FROM categories WHERE slug=? LIMIT 1`, [category_slug]);
+    if (!cat) return res.status(400).json({ ok:false, error:'invalid_category' });
+
+    if (slug) {
+      const [[dupe]] = await pool.query(`SELECT id FROM listings WHERE slug=? LIMIT 1`, [slug]);
+      if (dupe) return res.status(409).json({ ok:false, error:'slug_conflict' });
+    }
+
+    const [ins] = await pool.query(`
+      INSERT INTO listings
+      (seller_id, category_id, title, slug, description_md, price_minor, currency,
+       condition_grade, quantity, allow_trade, status, location_city, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'active', ?, NOW(), NOW())
+    `, [uid, cat.id, title, slug || null, description_md, price_minor, String(currency).toUpperCase(), condition_grade, allow_trade ? 1 : 0, location_city]);
+
+    const listingId = ins.insertId;
+
+    if (Array.isArray(image_urls) && image_urls.length) {
+      const values = image_urls.map((u, i) => [listingId, u, null, i + 1]);
+      await pool.query(
+        `INSERT INTO listing_images (listing_id, file_url, thumb_url, sort_order) VALUES ?`,
+        [values]
+      );
+    }
+
+    res.status(201).json({ ok:true, id: listingId });
+  } catch (e) { next(e); }
+});
+
+
+
 /**
  * ARAMA / LİSTELEME
  * GET /api/listings/search
