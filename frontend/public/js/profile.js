@@ -3,42 +3,49 @@
   const API_BASE = (window.APP && window.APP.API_BASE) || '';
   const $ = (s,r=document)=>r.querySelector(s);
 
-  const htmlEscape = (s)=> (s??'').toString()
-    .replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+  // --- helpers
+  const esc = (s)=> (s??'').toString().replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+  const toTL = (minor, cur='TRY') => {
+    const v = (Number(minor)||0) / 100;
+    try { return v.toLocaleString('tr-TR',{style:'currency',currency:cur||'TRY'}); }
+    catch { return `${v.toLocaleString('tr-TR')} ${esc(cur||'TRY')}`; }
+  };
+  const noStoreHeaders = { 'Accept':'application/json', 'Cache-Control':'no-cache' };
 
-  // --- Tab okuma: ?tab=... veya #orders desteği
   function getTab(){
     const u = new URL(location.href);
     const qTab = u.searchParams.get('tab');
     if (qTab) return qTab;
     const h = (u.hash || '').replace('#','').trim();
-    if (h === 'orders') return 'orders';
-    if (h === 'edit')   return 'edit';
+    if (['orders','edit','mylistings','overview'].includes(h)) return h || 'overview';
     return 'overview';
   }
   function setActive(tab){
     document.querySelectorAll('#tabs a')
       .forEach(a=>a.classList.toggle('active', a?.dataset?.tab===tab));
   }
-
   function redirectToLogin(){
     const u = new URL('/login.html', location.origin);
-    // hash'i da koru (örn. #orders)
     u.searchParams.set('redirect', location.pathname + location.search + location.hash);
     location.href = u.toString();
   }
-
-  async function fetchJSON(url, opts={}){
-    const r = await fetch(url, { credentials:'include', headers:{'Accept':'application/json'}, ...opts });
+  async function fetchJSON(url, opts = {}){
+    const r = await fetch(url, {
+      credentials:'include',
+      cache: 'no-store',
+      headers: noStoreHeaders,
+      ...opts
+    });
     if (r.status === 401) { redirectToLogin(); throw new Error('Unauthorized'); }
     if (!r.ok) throw new Error('HTTP '+r.status);
     return r.json();
   }
-
   async function requireLogin(){
     try{
       const r = await fetch(`${API_BASE}/api/auth/me`, {
-        credentials:'include', headers:{'Accept':'application/json'}
+        credentials:'include',
+        cache:'no-store',
+        headers: noStoreHeaders
       });
       if(!r.ok) throw 0;
       const d = await r.json();
@@ -49,47 +56,66 @@
     }
   }
 
-  // ---- OVERVIEW
-  async function renderOverview(root){
-    if (!root) return;
-    root.innerHTML = `<div class="pad">Yükleniyor…</div>`;
-    try{
-      const me = await fetchJSON(`${API_BASE}/api/auth/me`);
-      const u = me.user || me;
-      root.innerHTML = `
-        <div class="grid two section-gap">
-          <div class="card">
-            <div class="pad">
-              <h3>Profil</h3>
-              <div class="muted small">Hızlı özet</div>
-            </div>
-            <div class="pad">
-              <div><b>Ad Soyad:</b> ${htmlEscape(u.full_name || '-')}</div>
-              <div><b>E-posta:</b> ${htmlEscape(u.email || '-')}</div>
-              <div><b>Telefon:</b> ${htmlEscape(u.phone_e164 || '-')}</div>
-              <div><b>KYC:</b> ${htmlEscape(u.kyc_status || 'none')}</div>
-            </div>
-            <div class="pad" style="display:flex;gap:8px;flex-wrap:wrap">
-              <a class="btn" href="?tab=edit">Profili Düzenle</a>
-              <a class="btn ghost" href="/my-listings.html">İlanlarım</a>
-            </div>
-          </div>
+  // ---- cancel API
+  async function cancelOrder(id){
+    const url = new URL(`${API_BASE}/api/orders/${id}/cancel`);
+    url.searchParams.set('_ts', Date.now());
+    const r = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { 'Accept':'application/json', 'Cache-Control':'no-cache' }
+    });
+    let d = {};
+    try { d = await r.json(); } catch {}
+    if (!r.ok || d.ok === false) throw new Error(d.error || `HTTP_${r.status}`);
+    return d;
+  }
 
-          <div class="card">
-            <div class="pad"><h3>Hızlı İşlemler</h3></div>
-            <div class="pad" style="display:flex;gap:8px;flex-wrap:wrap">
-              <a class="btn" href="/sell.html">+ Yeni İlan</a>
-              <a class="btn" href="/favorites.html">Favorilerim</a>
-              <a class="btn" href="?tab=orders">Siparişlerim</a>
-              <a class="btn" href="/messages.html">Mesajlarım</a>
-            </div>
+  // ---- OVERVIEW
+
+async function renderOverview(root){
+  if (!root) return;
+  root.innerHTML = `<div class="pad">Yükleniyor…</div>`;
+  try{
+    const me = await fetchJSON(`${API_BASE}/api/auth/me?_ts=${Date.now()}`);
+    const u = me.user || me;
+
+    root.innerHTML = `
+      <div class="grid two section-gap">
+        <!-- SOL: Profil özeti (sadece bilgiler) -->
+        <div class="card">
+          <div class="pad">
+            <h3>Profil</h3>
+            <div class="muted small">Hızlı özet</div>
+          </div>
+          <div class="pad">
+            <div><b>Ad Soyad:</b> ${esc(u.full_name || '-')}</div>
+            <div><b>E-posta:</b> ${esc(u.email || '-')}</div>
+            <div><b>Telefon:</b> ${esc(u.phone_e164 || '-')}</div>
+            <div><b>KYC:</b> ${esc(u.kyc_status || 'none')}</div>
           </div>
         </div>
-      `;
-    }catch{
-      root.innerHTML = `<div class="pad error">Bilgiler alınamadı.</div>`;
-    }
+
+        <!-- SAĞ: Hızlı İşlemler (tüm butonlar burada) -->
+        <div class="card">
+          <div class="pad"><h3>Hızlı İşlemler</h3></div>
+          <div class="pad quick-actions">
+            <a class="btn block ghost" href="?tab=edit">Profili Düzenle</a>
+            <a class="btn block" href="/sell.html">+ Yeni İlan</a>
+            <a class="btn block ghost" href="?tab=mylistings">İlanlarım</a>
+            <a class="btn block" href="/favorites.html">Favorilerim</a>
+            <a class="btn block" href="/messages.html">Mesajlarım</a>
+            <a class="btn block ghost" href="?tab=orders">Siparişlerim</a>
+          </div>
+        </div>
+      </div>
+    `;
+  }catch{
+    root.innerHTML = `<div class="pad error">Bilgiler alınamadı.</div>`;
   }
+}
+
 
   // ---- EDIT
   async function renderEdit(root){
@@ -118,7 +144,7 @@
     `;
 
     try{
-      const me = await fetchJSON(`${API_BASE}/api/auth/me`);
+      const me = await fetchJSON(`${API_BASE}/api/auth/me?_ts=${Date.now()}`);
       const u = me.user || me;
       $('#pf [name="full_name"]').value  = u.full_name  || '';
       $('#pf [name="phone_e164"]').value = u.phone_e164 || '';
@@ -144,9 +170,11 @@
       }
 
       try{
-        const r = await fetch(`${API_BASE}/api/users/profile`, {
-          method:'POST', credentials:'include',
-          headers:{'Content-Type':'application/json','Accept':'application/json'},
+        const r = await fetch(`${API_BASE}/api/users/profile?_ts=${Date.now()}`, {
+          method:'POST',
+          credentials:'include',
+          cache:'no-store',
+          headers:{'Content-Type':'application/json', ...noStoreHeaders},
           body: JSON.stringify({ full_name, phone_e164 })
         });
         const data = await r.json().catch(()=>({}));
@@ -163,119 +191,29 @@
     });
   }
 
-  // ---- ORDERS
-  // minor→TRY (currency param’ı varsa onu kullanır)
-  const toTL = (minor, cur='TRY') => {
-    const v = (Number(minor)||0) / 100;
-    try {
-      return v.toLocaleString('tr-TR', { style:'currency', currency: cur || 'TRY' });
-    } catch {
-      return `${v.toLocaleString('tr-TR')} ${htmlEscape(cur||'TRY')}`;
-    }
-  };
-
+  // ---- ORDERS (buyer)
   async function fetchOrders(){
-    const r = await fetch(`${API_BASE}/api/orders/mine`, { credentials:'include', headers:{'Accept':'application/json'} });
+    const url = new URL(`${API_BASE}/api/orders/mine`);
+    url.searchParams.set('_ts', Date.now()); // cache-buster
+    const r = await fetch(url, {
+      credentials:'include',
+      cache:'no-store',
+      headers: noStoreHeaders
+    });
     if (r.status === 401) { redirectToLogin(); return []; }
     const d = await r.json().catch(()=>({}));
     return d && d.ok ? (d.orders || []) : [];
   }
 
-  async function cancelOrder(id){
-    const r = await fetch(`${API_BASE}/api/orders/${id}/cancel`, { method:'POST', credentials:'include', headers:{'Accept':'application/json'} });
-    const d = await r.json().catch(()=>({ ok:false }));
-    if (!d.ok) throw new Error(d.error || 'CANCEL_FAIL');
-    return d;
-  }
-
   function pickThumb(o){
     const t = o.thumb_url || o.thumb || '';
-    if (!t) return '/assets/products/p1.svg';
+    if (!t) return '/assets/placeholder.png'; // gerekirse /assets/products/p1.svg dosyası varsa onu kullan
     if (/^https?:\/\//i.test(t) || t.startsWith('/')) return t;
     return `/uploads/${t}`;
   }
-
-  function renderOrdersTable(root, rows){
-    root.innerHTML = `
-      <div id="ordersEmpty" ${rows.length ? 'hidden' : ''}>Henüz siparişin yok.</div>
-      <table id="ordersTable" class="table" style="${rows.length ? '' : 'display:none'}">
-        <thead>
-          <tr>
-            <th>Ürün</th>
-            <th>Adet</th>
-            <th>Birim</th>
-            <th>Toplam</th>
-            <th>Durum</th>
-            <th>Tarih</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>`;
-    if (!rows.length) return;
-
-    const tbody = root.querySelector('#ordersTable tbody');
-
-    for (const o of rows){
-      const tr = document.createElement('tr');
-
-      // Ürün hücresi
-      const tdProd = document.createElement('td');
-      const wrap = document.createElement('div');
-      wrap.style.display='flex'; wrap.style.alignItems='center'; wrap.style.gap='10px';
-      const img = document.createElement('img');
-      img.className='thumb';
-      img.src = pickThumb(o);
-      img.alt = '';
-      img.style.width='56px'; img.style.height='56px'; img.style.objectFit='cover'; img.style.borderRadius='8px';
-      const a = document.createElement('a');
-      a.href=`/listing.html?id=${o.listing_id}`;
-      a.textContent = o.title || `#${o.listing_id}`;
-      wrap.append(img,a); tdProd.append(wrap);
-
-      // Adet
-      const tdQty = document.createElement('td');
-      tdQty.textContent = o.qty || 1;
-
-      // Birim fiyat (minor)
-      const tdUnit = document.createElement('td');
-      tdUnit.textContent = toTL(o.unit_price_minor, o.currency);
-
-      // Toplam (minor)
-      const tdTotal = document.createElement('td');
-      tdTotal.textContent = toTL(o.total_minor, o.currency);
-
-      // Durum
-      const tdStatus = document.createElement('td');
-      tdStatus.textContent = o.status;
-
-      // Tarih
-      const tdDate = document.createElement('td');
-      tdDate.textContent = new Date(o.created_at).toLocaleString('tr-TR');
-
-      // İşlem
-      const tdAct = document.createElement('td');
-      if (o.status === 'pending'){
-        const btn = document.createElement('button'); btn.className='btn'; btn.textContent='İptal';
-        btn.addEventListener('click', async ()=>{
-          btn.disabled = true;
-          try{
-            await cancelOrder(o.id);
-            tdStatus.textContent = 'cancelled';
-            btn.remove();
-          }catch(e){
-            alert('İptal edilemedi');
-            btn.disabled = false;
-          }
-        });
-        tdAct.append(btn);
-      } else {
-        tdAct.textContent = '';
-      }
-
-      tr.append(tdProd, tdQty, tdUnit, tdTotal, tdStatus, tdDate, tdAct);
-      tbody.append(tr);
-    }
+  function buildListingHref(o){
+    if (o.slug) return `/listing.html?slug=${encodeURIComponent(o.slug)}`;
+    return `/listing.html?id=${o.listing_id || o.id}`;
   }
 
   async function renderOrders(root){
@@ -283,28 +221,184 @@
     root.innerHTML = `<div class="pad">Yükleniyor…</div>`;
     try{
       const rows = await fetchOrders();
-      renderOrdersTable(root, rows);
+
+      const table = `
+        <div id="ordersEmpty" ${rows.length ? 'hidden' : ''}>Henüz siparişin yok.</div>
+        <table id="ordersTable" class="table" style="${rows.length ? '' : 'display:none'};width:100%">
+          <thead>
+            <tr>
+              <th>Ürün</th>
+              <th>Fiyat</th>
+              <th>Durum</th>
+              <th>Tarih</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>`;
+      root.innerHTML = table;
+
+      if (!rows.length) return;
+      const tbody = root.querySelector('#ordersTable tbody');
+
+      for (const o of rows){
+        const tr = document.createElement('tr');
+
+        const tdProd = document.createElement('td');
+        const wrap = document.createElement('div');
+        wrap.style.display='flex'; wrap.style.alignItems='center'; wrap.style.gap='10px';
+        const img = document.createElement('img');
+        img.src = pickThumb(o);
+        img.alt = '';
+        img.style.width='56px'; img.style.height='56px';
+        img.style.objectFit='cover'; img.style.borderRadius='8px';
+        const a = document.createElement('a');
+        a.href = buildListingHref(o);
+        a.textContent = esc(o.title || `#${o.listing_id}`);
+        wrap.append(img,a); tdProd.append(wrap);
+
+        const tdPrice = document.createElement('td');
+        const totalMinor = (o.total_minor != null) ? o.total_minor : (Number(o.unit_price_minor||0) * (o.qty || 1));
+        tdPrice.textContent = toTL(totalMinor, o.currency);
+
+        const tdStatus = document.createElement('td'); tdStatus.textContent = o.status;
+        const tdDate   = document.createElement('td'); tdDate.textContent   = new Date(o.created_at).toLocaleString('tr-TR');
+
+        // Aksiyon kolonu
+        const tdAct = document.createElement('td');
+        if (o.status === 'pending') {
+          const btn = document.createElement('button');
+          btn.className = 'btn';
+          btn.textContent = 'İptal';
+          btn.addEventListener('click', async () => {
+            if (!confirm('Bu siparişi iptal etmek istediğine emin misin?')) return;
+            btn.disabled = true;
+            try{
+              await cancelOrder(o.id);
+
+              // Satırı kaldır
+              tr.remove();
+
+              // Tabloda başka satır kalmadıysa boş mesajını aç
+              const tbodyEl = root.querySelector('#ordersTable tbody');
+              if (!tbodyEl || tbodyEl.children.length === 0) {
+                const tbl = root.querySelector('#ordersTable');
+                if (tbl) tbl.style.display = 'none';
+                const empty = root.querySelector('#ordersEmpty');
+                if (empty) empty.hidden = false;
+              }
+            }catch(e){
+              console.error(e);
+              alert('İptal edilemedi: ' + (e.message || 'Bilinmeyen hata'));
+              btn.disabled = false;
+            }
+          });
+          tdAct.append(btn);
+        } else {
+          tdAct.textContent = '';
+        }
+
+        tr.append(tdProd, tdPrice, tdStatus, tdDate, tdAct);
+        tbody.append(tr);
+      }
     }catch(e){
       console.error(e);
       root.innerHTML = `<div class="pad error">Siparişler alınamadı.</div>`;
     }
   }
 
-  // ---- Router (tek)
+  // ---- MY LISTINGS (seller)
+  async function fetchMyListings(page=1, size=24){
+    const url = new URL('/api/listings/my', API_BASE);
+    url.searchParams.set('page', page);
+    url.searchParams.set('size', size);
+    url.searchParams.set('_ts', Date.now());
+
+    const r = await fetch(url.toString(), {
+      credentials:'include',
+      cache:'no-store',
+      headers: noStoreHeaders
+    });
+    if (r.status === 401) { redirectToLogin(); return { items:[], total:0 }; }
+
+    const d = await r.json().catch(()=>({}));
+    if (!r.ok) return { items:[], total:0 };
+
+    const items = d.items || d.listings || [];
+    const total = Number(d.total != null ? d.total : (d.count != null ? d.count : items.length));
+    return { items, total };
+  }
+
+  function listingCard(x){
+    const img = x.thumb_url || x.cover || '/assets/placeholder.png';
+    const href = x.slug ? `/listing.html?slug=${encodeURIComponent(x.slug)}`
+                        : `/listing.html?id=${encodeURIComponent(x.id)}`;
+
+    let priceStr = '';
+    if (typeof x.price_minor === 'number') {
+      priceStr = toTL(x.price_minor, x.currency || 'TRY');
+    } else if (x.price != null) {
+      priceStr = `${(Number(x.price)||0).toLocaleString('tr-TR')} ${esc(x.currency||'TRY')}`;
+    }
+
+    return `
+      <article class="card">
+        <img src="${img}" alt="" onerror="this.src='/assets/placeholder.png';this.onerror=null">
+        <div class="pad">
+          <h3>${esc(x.title || '')}</h3>
+          <p class="muted">${esc(x.category_name || '')}</p>
+          <div class="price">${priceStr}</div>
+          <div class="row" style="display:flex;gap:8px;flex-wrap:wrap">
+            <a class="btn" href="${href}">Görüntüle</a>
+            <a class="btn ghost" href="/sell.html?edit=${encodeURIComponent(x.id)}">Düzenle</a>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  async function renderMyListings(root){
+    if (!root) return;
+    root.innerHTML = `<div class="pad">Yükleniyor…</div>`;
+    try{
+      const { items, total } = await fetchMyListings(1, 24);
+      if (!items.length){
+        root.innerHTML = `
+          <div class="empty">
+            Henüz ilanınız yok.
+            <div style="margin-top:8px"><a class="btn primary" href="/sell.html">+ Yeni İlan Ver</a></div>
+          </div>`;
+        return;
+      }
+      root.innerHTML = `
+        <div class="grid three" id="myListGrid"></div>
+        <div class="muted" style="margin-top:8px">Toplam: ${total}</div>
+      `;
+      const grid = $('#myListGrid', root);
+      if (grid) grid.innerHTML = items.map(listingCard).join('');
+    }catch(e){
+      console.error(e);
+      root.innerHTML = `<div class="pad error">İlanlar alınamadı.</div>`;
+    }
+  }
+
+  // ---- Router
   async function route(){
-    await requireLogin(); // giriş değilse login’e yollar
+    await requireLogin();
     const tab = getTab();
     setActive(tab);
     document.title =
-      tab==='edit'   ? 'Profil Düzenle | Hesabım' :
-      tab==='orders' ? 'Siparişlerim | Hesabım' :
-                       'Hesabım';
+      tab==='edit'       ? 'Profil Düzenle | Hesabım' :
+      tab==='orders'     ? 'Siparişlerim | Hesabım' :
+      tab==='mylistings' ? 'İlanlarım | Hesabım' :
+                           'Hesabım';
 
     const content = $('#tab_content');
     if (!content) return;
 
-    if (tab === 'edit')   return renderEdit(content);
-    if (tab === 'orders') return renderOrders(content);
+    if (tab === 'edit')       return renderEdit(content);
+    if (tab === 'orders')     return renderOrders(content);
+    if (tab === 'mylistings') return renderMyListings(content);
     return renderOverview(content);
   }
 
@@ -318,14 +412,12 @@
         e.preventDefault();
         const u = new URL(location.href);
         u.searchParams.set('tab', tab);
-        // hash'i temizleyelim ki çakışmasın
         history.pushState({tab}, '', u.toString().split('#')[0]);
         route();
       });
     });
   }
 
-  // Hem partials hem klasik sayfalar için
   document.addEventListener('partials:loaded', ()=>{ wireTabs(); route(); });
   window.addEventListener('popstate', route);
   window.addEventListener('DOMContentLoaded', ()=>{ wireTabs(); route(); });

@@ -470,3 +470,9 @@ footer .container{
 /* Detay sayfasında butonlar üstte kalsın */
 .actions .btn, .card-actions .btn { position: relative; z-index: 2; }
 
+/* quick actions */
+.quick-actions { display: grid; gap: 10px; }
+.btn.block { display: block; width: 100%; text-align: center; }
+
+/* ince ayraç */
+.qa-sep { border: 0; border-top: 1px solid #e5e7eb; margin: 6px 0; }

@@ -16,6 +16,7 @@ import orders from './routes/orders.js';
 import billing from './routes/billing.js';
 // en üstte importlar arasına
 import users from './routes/users.js';
+import messagesRouter from './routes/messages.js';
 
 import { pingDb } from './db.js';
 await pingDb();
@@ -23,6 +24,18 @@ await pingDb();
 
 
 const app = express();
+
+// ETag'ı kapatmak (opsiyonel ama pratik)
+app.set('etag', false);
+
+// Sadece API altında cache'i kapat
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store'); // her zaman taze JSON
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 
 // --- güvenli CORS köken listesi ---
 const ORIGINS = 'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000'
@@ -59,6 +72,7 @@ app.use('/api/messages', messages);
 app.use('/api/orders', orders);
 app.use('/api/trade', trade);
 app.use('/api/users', users);
+app.use('/api/messages', messagesRouter);
 
 
 

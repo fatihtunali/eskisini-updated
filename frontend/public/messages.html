@@ -1,14 +1,9 @@
-<!-- messages.html -->
 <!doctype html>
 <html lang="tr">
 <head>
-  <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-  rel="stylesheet">
-
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Mesajlarım</title>
   <link rel="stylesheet" href="css/styles.css">
@@ -23,44 +18,17 @@
 
   <div data-include="partials/footer.html"></div>
 
-  <script src="js/partials.js"></script>
-  <script src="js/header.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/session.js"></script>
-  <script src="js/buy.js"></script>
+<script src="js/partials.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/header.js"></script>
 
-  <script>
-  (function(){
-    const API=(window.APP&&APP.API_BASE)||'';
-    const root=document.getElementById('threads');
+<!-- sayfaya özel -->
+<script src="js/messages.js"></script>
 
-    document.addEventListener('partials:loaded', load);
+<script>includePartials();</script>
 
-    async function load(){
-      root.innerHTML='<div class="pad">Yükleniyor…</div>';
-      const r=await fetch(`${API}/api/messages/threads`,{credentials:'include'});
-      if(!r.ok){ root.innerHTML='<div class="pad error">Mesajlar alınamadı.</div>'; return; }
-
-      const data=await r.json();
-      const list=data.threads||[];
-      if(!list.length){
-        root.innerHTML='<div class="empty">Henüz mesajınız yok.</div>';
-        return;
-      }
-      root.innerHTML=list.map(t=>{
-        const prev = t.last_message_preview || '—';
-        const when = t.updated_at ? new Date(t.updated_at).toLocaleString('tr-TR') : '';
-        return `
-          <a class="item" href="/thread.html?id=${encodeURIComponent(t.id)}">
-            <div><b>${t.other_user_name||'Kullanıcı'}</b></div>
-            <div class="muted">${prev}</div>
-            <div class="muted small">${when}</div>
-          </a>`;
-      }).join('');
-    }
-  })();
-  </script>
-  <script>includePartials();</script>
 </body>
 </html>

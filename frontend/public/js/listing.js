@@ -164,6 +164,87 @@
     });
   })();
 
+
+(async function(){
+  if (typeof includePartials === 'function') includePartials();
+
+  const API = window.APP.API_BASE;
+  const $  = (s,r=document)=>r.querySelector(s);
+  const esc= s => String(s??'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const money = (minor, cur='TRY') => new Intl.NumberFormat('tr-TR',{style:'currency',currency:cur}).format((minor||0)/100);
+
+  const u = new URL(location.href);
+  const slug = u.searchParams.get('slug');
+  if (!slug) { location.href = '/'; return; }
+
+  function toLogin() {
+    location.href = `/login.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+  }
+
+  async function startConversation(listingId){
+    const r = await fetch(`${API}/api/messages/start`, {
+      method:'POST',
+      credentials:'include',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify({ listing_id: listingId }) // to_user_id gerekmiyor
+    });
+    if (r.status === 401) { toLogin(); return null; }
+    const d = await r.json().catch(()=>({}));
+    if (!r.ok || d.ok === false) throw new Error(d.error || 'START_FAIL');
+    return d.conversation_id;
+  }
+
+  function openThread(convId){
+    // ayrı thread sayfan varsa:
+    location.href = `/thread.html?id=${encodeURIComponent(convId)}`;
+  }
+
+  try{
+    const res = await fetch(`${API}/api/listings/${encodeURIComponent(slug)}`, { headers:{'Accept':'application/json'} });
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    if (!data?.ok) throw new Error('not_ok');
+
+    const L = data.listing;
+    const imgs = data.images || [];
+    $('#title').textContent = L.title || '';
+    $('#meta').textContent  = [L.category_name, L.location_city].filter(Boolean).join(' • ');
+    $('#price').textContent = money(L.price_minor, L.currency || 'TRY');
+    $('#desc').innerHTML    = `<pre style="white-space:pre-wrap">${esc(L.description_md||'')}</pre>`;
+    $('#img').src           = (imgs[0]?.file_url) || '/assets/placeholder.png';
+
+    // Favori hydrate
+    const favBtn = $('#favBtn');
+    const favCount = $('#favCount');
+    favBtn.dataset.listingId = L.id;
+    favCount.textContent = String(L.favorites_count ?? 0);
+    if (window.FAV) await FAV.wireFavButtons(document);
+
+    // Satıcıya Mesaj
+    const msgBtn = $('#msgBtn');
+    if (msgBtn) {
+      msgBtn.addEventListener('click', async ()=>{
+        msgBtn.disabled = true;
+        try{
+          const convId = await startConversation(L.id);
+          if (!convId) return; // login yönlendirmesi
+          openThread(convId);
+        }catch(e){
+          console.error(e);
+          alert('Mesaj başlatılamadı.');
+        }finally{
+          msgBtn.disabled = false;
+        }
+      });
+    }
+  }catch(e){
+    console.error(e);
+    $('#detail').innerHTML = `<div class="pad error">İlan bulunamadı.</div>`;
+  }
+})();
+
+
+
   window.addEventListener('DOMContentLoaded', load);
 })();
 console.log('[LISTING] script loaded');

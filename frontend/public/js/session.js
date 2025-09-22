@@ -52,6 +52,7 @@
         <div class="menu" role="menu" hidden>
           <a href="/profile.html" role="menuitem">Profil</a>
           <a href="/profile.html#edit" role="menuitem">Profil Düzenle</a>
+          <a href="/messages.html#edit" role="menuitem">Mesajlarım</a>
           <a href="/profile.html#orders" role="menuitem">Siparişlerim</a>
           <a href="/my-listings.html" role="menuitem">İlanlarım</a>
           <a href="/favorites.html" role="menuitem">Favorilerim</a>

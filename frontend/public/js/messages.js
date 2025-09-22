@@ -1,164 +1,196 @@
-// backend/routes/messages.js
-import { Router } from 'express';
-import { pool } from '../db.js';
-import { authRequired } from '../mw/auth.js';
+(function(){
+  const API = (window.APP && APP.API_BASE) || '';
+  const $   = (s,r=document)=>r.querySelector(s);
 
-const r = Router();
+  const headersNoStore = { 'Accept':'application/json', 'Cache-Control':'no-cache' };
 
-/* ---------- Helpers ---------- */
-const PREVIEW_LEN = 140;
+  function escapeHTML(s){ return (s??'').toString().replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
+  function toLogin(){
+    location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search);
+  }
+  async function whoami(){
+    try{
+      const r = await fetch(`${API}/api/auth/me`, { credentials:'include', headers: headersNoStore, cache:'no-store' });
+      if (!r.ok) return null;
+      const d = await r.json(); return d.user || d;
+    }catch{ return null; }
+  }
 
-async function getOtherUserName(myId, buyerId, sellerId) {
-  const otherId = (myId === buyerId) ? sellerId : buyerId;
-  const [[u]] = await pool.query(`SELECT full_name FROM users WHERE id=?`, [otherId]);
-  return u?.full_name || 'Kullanıcı';
-}
+  /* ------------------ THREADS (messages.html) ------------------ */
+  async function loadThreads(){
+    const root = $('#threads');
+    if (!root) return; // bu sayfa değil
 
-/* ---------- Thread (Conversation) listem ---------- */
-/** GET /api/messages/threads */
-r.get('/threads', authRequired, async (req, res) => {
-  const uid = req.user.id;
+    // Kimlik kontrolü
+    const me = await whoami();
+    if (!me) { toLogin(); return; }
 
-  // Kullanıcının taraf olduğu tüm konuşmalar
-  const [rows] = await pool.query(
-    `SELECT c.id, c.listing_id, c.buyer_id, c.seller_id, c.last_msg_at,
-            l.title AS listing_title
-       FROM conversations c
-  LEFT JOIN listings l ON l.id = c.listing_id
-      WHERE c.buyer_id = ? OR c.seller_id = ?
-      ORDER BY c.last_msg_at DESC
-      LIMIT 200`,
-    [uid, uid]
-  );
+    root.innerHTML = '<div class="pad">Yükleniyor…</div>';
+    try{
+      const r = await fetch(`${API}/api/messages/threads?_ts=${Date.now()}`, {
+        credentials:'include',
+        headers: headersNoStore,
+        cache: 'no-store'
+      });
+      if (r.status === 401) { toLogin(); return; }
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      const data = await r.json();
+      const list = data.threads || [];
 
-  // Son mesaj önizlemesi ve karşı taraf adı
-  const threads = [];
-  for (const c of rows) {
-    const [[last]] = await pool.query(
-      `SELECT body, created_at
-         FROM messages
-        WHERE conversation_id=?
-        ORDER BY id DESC
-        LIMIT 1`,
-      [c.id]
-    );
-    threads.push({
-      id: c.id,
-      listing_id: c.listing_id,
-      listing_title: c.listing_title,
-      updated_at: c.last_msg_at,
-      last_message_preview: (last?.body || '').slice(0, PREVIEW_LEN),
-      other_user_name: await getOtherUserName(uid, c.buyer_id, c.seller_id),
+      if (!list.length){
+        root.innerHTML = '<div class="empty">Henüz mesajınız yok.</div>';
+        return;
+      }
+
+      root.innerHTML = list.map(t=>{
+        const prev = escapeHTML(t.last_message_preview || '—');
+        const when = t.updated_at ? new Date(t.updated_at).toLocaleString('tr-TR') : '';
+        const other = escapeHTML(t.other_user_name || 'Kullanıcı');
+        const title = escapeHTML(t.listing_title || '');
+        return `
+          <a class="item" href="/thread.html?id=${encodeURIComponent(t.id)}">
+            <div><b>${other}</b>${title ? ` • <span class="muted">${title}</span>` : ''}</div>
+            <div class="muted">${prev}</div>
+            <div class="muted small">${when}</div>
+          </a>`;
+      }).join('');
+    }catch(e){
+      console.error('[messages] threads error', e);
+      root.innerHTML = '<div class="pad error">Mesajlar alınamadı.</div>';
+    }
+  }
+
+  /* ------------------ SINGLE THREAD (thread.html) ------------------ */
+  let pollTimer = null;
+  let currentThreadId = null;
+
+  async function ensureConversationFromQuery(qs){
+    // id yoksa listing(+seller) ile konuyu başlat/geri getir
+    const listing = Number(qs.get('listing') || 0);
+    const seller  = Number(qs.get('seller') || 0);
+    if (!listing) return null;
+
+    const payload = { listing_id: listing };
+    if (Number.isInteger(seller) && seller > 0) payload.to_user_id = seller;
+
+    const r = await fetch(`${API}/api/messages/start`, {
+      method:'POST',
+      credentials:'include',
+      headers:{ 'Content-Type':'application/json', ...headersNoStore },
+      cache:'no-store',
+      body: JSON.stringify(payload)
+    });
+    if (r.status === 401) { toLogin(); return null; }
+    const d = await r.json().catch(()=>({}));
+    if (!r.ok || d.ok === false) return null;
+    return d.conversation_id;
+  }
+
+  async function loadThreadMessages(){
+    const box  = $('#msgs');
+    if (!box || !currentThreadId) return;
+
+    try{
+      const r = await fetch(`${API}/api/messages/thread/${encodeURIComponent(currentThreadId)}?_ts=${Date.now()}`, {
+        credentials:'include',
+        headers: headersNoStore,
+        cache: 'no-store'
+      });
+      if (r.status === 401) { toLogin(); return; }
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      const data = await r.json();
+      const me = await whoami();
+
+      box.innerHTML = (data.messages || []).map(m=>{
+        const mine = (m.sender_id === me?.id);
+        const time = m.created_at ? new Date(m.created_at).toLocaleString('tr-TR') : '';
+        return `
+          <div class="bubble ${mine ? 'me' : ''}">
+            ${escapeHTML(m.body || '')}
+            <span class="time">${time}</span>
+          </div>`;
+      }).join('') || '<div class="pad muted">Henüz mesaj yok.</div>';
+
+      box.scrollTop = box.scrollHeight;
+    }catch(e){
+      console.error('[messages] load thread error', e);
+      const box = $('#msgs');
+      if (box) box.innerHTML = '<div class="pad error">Mesajlar yüklenemedi.</div>';
+    }
+  }
+
+  function wireSendForm(){
+    const form = $('#send');
+    if (!form) return;
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if (!currentThreadId) return;
+
+      const fd = new FormData(form);
+      const body = String(fd.get('body') || '').trim();
+      if (!body) return;
+
+      try{
+        const r = await fetch(`${API}/api/messages/thread/${encodeURIComponent(currentThreadId)}`, {
+          method:'POST',
+          credentials:'include',
+          headers:{ 'Content-Type':'application/json', ...headersNoStore },
+          cache:'no-store',
+          body: JSON.stringify({ body })
+        });
+        if (r.status === 401) { toLogin(); return; }
+        if (!r.ok) throw new Error('HTTP '+r.status);
+        form.reset();
+        await loadThreadMessages();
+      }catch(e){
+        console.error('[messages] send error', e);
+      }
     });
   }
 
-  res.json({ ok:true, threads });
-});
+  async function bootThread(){
+    const box = $('#msgs');
+    if (!box) return; // bu sayfa değil
 
-/* ---------- Bir thread’in mesajları ---------- */
-/** GET /api/messages/thread/:id */
-r.get('/thread/:id', authRequired, async (req, res) => {
-  const uid = req.user.id;
-  const convoId = Number(req.params.id || 0);
-  if (!convoId) return res.status(400).json({ ok:false, error:'bad_id' });
+    // Kimlik kontrolü
+    const me = await whoami();
+    if (!me) { toLogin(); return; }
 
-  const [[c]] = await pool.query(
-    `SELECT buyer_id, seller_id FROM conversations WHERE id=?`,
-    [convoId]
-  );
-  if (!c || (c.buyer_id !== uid && c.seller_id !== uid)) {
-    return res.status(404).json({ ok:false, error:'not_found' });
+    const qs = new URLSearchParams(location.search);
+    let id   = qs.get('id');
+
+    if (!id){
+      // Eski/yanlış bağlantı: ?listing=…(&seller=…)
+      const convId = await ensureConversationFromQuery(qs);
+      if (!convId){
+        box.innerHTML = '<div class="pad error">Konuşma açılamadı.</div>';
+        return;
+      }
+      // URL’i temizle & id parametresiyle değiştir
+      const u = new URL(location.href);
+      u.searchParams.delete('listing');
+      u.searchParams.delete('seller');
+      u.searchParams.set('id', convId);
+      history.replaceState(null, '', u.toString());
+      id = String(convId);
+    }
+
+    currentThreadId = id;
+    wireSendForm();
+    await loadThreadMessages();
+
+    // Basit auto-refresh (5 sn)
+    clearInterval(pollTimer);
+    pollTimer = setInterval(loadThreadMessages, 5000);
+    // Sayfadan çıkınca kapat
+    window.addEventListener('beforeunload', ()=>clearInterval(pollTimer));
   }
 
-  const [msgs] = await pool.query(
-    `SELECT id, sender_id, body, created_at
-       FROM messages
-      WHERE conversation_id=?
-      ORDER BY id ASC`,
-    [convoId]
-  );
-  res.json({ ok:true, messages: msgs });
-});
-
-/* ---------- Mesaj gönder ---------- */
-/** POST /api/messages/thread/:id  body:{ body } */
-r.post('/thread/:id', authRequired, async (req, res) => {
-  const uid = req.user.id;
-  const convoId = Number(req.params.id || 0);
-  const body = String(req.body?.body || '').trim();
-  if (!convoId) return res.status(400).json({ ok:false, error:'bad_id' });
-  if (!body)    return res.status(400).json({ ok:false, error:'empty_body' });
-
-  const [[c]] = await pool.query(
-    `SELECT buyer_id, seller_id FROM conversations WHERE id=?`,
-    [convoId]
-  );
-  if (!c || (c.buyer_id !== uid && c.seller_id !== uid)) {
-    return res.status(404).json({ ok:false, error:'not_found' });
+  /* ------------------ BOOT ------------------ */
+  function boot(){
+    loadThreads();
+    bootThread();
   }
-
-  await pool.query(
-    `INSERT INTO messages (conversation_id, sender_id, body, created_at)
-     VALUES (?,?,?, NOW())`,
-    [convoId, uid, body]
-  );
-
-  await pool.query(
-    `UPDATE conversations
-        SET last_msg_at = NOW()
-      WHERE id = ?`,
-    [convoId]
-  );
-
-  res.json({ ok:true });
-});
-
-/* ---------- Konuşma başlat (varsa getir) ---------- */
-/** POST /api/messages/start  body:{ listing_id, to_user_id } */
-r.post('/start', authRequired, async (req, res) => {
-  const uid = req.user.id;
-  const listing_id = Number(req.body?.listing_id || 0);
-  const to_user_id = Number(req.body?.to_user_id || 0);
-  if (!listing_id || !to_user_id) {
-    return res.status(400).json({ ok:false, error:'missing_params' });
-  }
-  if (to_user_id === uid) {
-    return res.status(400).json({ ok:false, error:'cant_message_self' });
-  }
-
-  // İlan ve satıcıyı al
-  const [[l]] = await pool.query(`SELECT id, seller_id FROM listings WHERE id=?`, [listing_id]);
-  if (!l) return res.status(404).json({ ok:false, error:'listing_not_found' });
-
-  // Buyer/Seller rolünü belirle
-  let buyer_id, seller_id;
-  if (uid === l.seller_id) {
-    buyer_id = to_user_id;
-    seller_id = uid;
-  } else {
-    buyer_id = uid;
-    seller_id = l.seller_id;
-  }
-
-  // Mevcut konuşma var mı?
-  const [[existing]] = await pool.query(
-    `SELECT id FROM conversations
-      WHERE listing_id=? AND buyer_id=? AND seller_id=? LIMIT 1`,
-    [listing_id, buyer_id, seller_id]
-  );
-
-  if (existing) {
-    return res.json({ ok:true, conversation_id: existing.id, existed: true });
-  }
-
-  // Yoksa oluştur
-  const [ins] = await pool.query(
-    `INSERT INTO conversations (listing_id, buyer_id, seller_id, last_msg_at, created_at)
-     VALUES (?, ?, ?, NOW(), NOW())`,
-    [listing_id, buyer_id, seller_id]
-  );
-
-  res.json({ ok:true, conversation_id: ins.insertId, existed: false });
-});
-
-export default r;
+  document.addEventListener('partials:loaded', boot);
+  window.addEventListener('DOMContentLoaded', boot);
+})();

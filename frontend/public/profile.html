@@ -2,11 +2,9 @@
 <html lang="tr">
 <head>
   <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-  rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
 
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Hesabım</title>
@@ -15,43 +13,32 @@
 <body>
   <div data-include="partials/header.html"></div>
 
-<section class="profile-tabs">
- <nav id="tabs">
-  <a href="?tab=overview" data-tab="overview" class="active">Genel</a>
-  <a href="?tab=edit"     data-tab="edit">Düzenle</a>
-  <a href="?tab=orders"   data-tab="orders">Siparişlerim</a>
-</nav>
-<div id="ordersMount">
-  <div id="ordersEmpty" class="muted" hidden>Henüz siparişin yok.</div>
-  <table id="ordersTable" class="table" style="width:100%;display:none">
-    <thead>
-      <tr>
-        <th>Ürün</th>
-        <th>Fiyat</th>
-        <th>Durum</th>
-        <th>Tarih</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+  <main class="container section">
+    <section class="profile-tabs">
+      <nav id="tabs" class="tabs" style="margin-bottom:12px">
+        <a href="?tab=overview"   data-tab="overview"   class="active">Genel</a>
+        <a href="?tab=edit"       data-tab="edit">Düzenle</a>
+        <a href="?tab=orders"     data-tab="orders">Siparişlerim</a>
+        <a href="?tab=mylistings" data-tab="mylistings">İlanlarım</a>
+      </nav>
 
-</section>
-
+      <!-- profile.js buraya render ediyor -->
+      <div id="tab_content"></div>
+    </section>
+  </main>
 
   <div data-include="partials/footer.html"></div>
 
-  <!-- JS -->
-<script src="js/partials.js"></script>
-<script src="js/header.js"></script> <!-- BUNU EKLE -->
-<script src="js/config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/profile.js"></script>
-<script src="js/session.js"></script>
-<script src="js/buy.js"></script>
-<script src="/js/orders-tab.js"></script>
+  <!-- JS sırası -->
+  <script src="js/partials.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/session.js"></script>  <!-- header'dan ÖNCE -->
+  <script src="js/header.js"></script>
+  <script src="js/buy.js"></script>
+  <script src="js/profile.js"></script>
 
-<script>includePartials();</script>
-
+  <script>includePartials();</script>
 </body>
 </html>

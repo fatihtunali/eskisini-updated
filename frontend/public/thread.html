@@ -1,14 +1,9 @@
-<!-- thread.html -->
 <!doctype html>
 <html lang="tr">
 <head>
-  <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-  rel="stylesheet">
-
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Mesajlar</title>
   <link rel="stylesheet" href="css/styles.css">
@@ -27,70 +22,18 @@
 
   <div data-include="partials/footer.html"></div>
 
-  <script src="js/partials.js"></script>
-  <script src="js/header.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/auth.js" defer></script>
-  <script src="js/session.js"></script>
-  <script src="js/buy.js"></script>
+<script src="js/partials.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/session.js"></script>
+<script src="js/header.js"></script>
 
-  
-  <script>
-  (function(){
-    const API=(window.APP&&APP.API_BASE)||'';
-    const qs = new URLSearchParams(location.search);
-    const id = qs.get('id');
-    const box = document.getElementById('msgs');
-    const form = document.getElementById('send');
+<!-- sayfaya özel -->
+<script src="js/messages.js"></script>
 
-    document.addEventListener('partials:loaded', ()=>{ if(id) load(); });
+<script>includePartials();</script>
 
-    async function load(){
-      box.innerHTML = '<div class="pad">Yükleniyor…</div>';
-      const r = await fetch(`${API}/api/messages/thread/${encodeURIComponent(id)}`, { credentials:'include' });
-      if(!r.ok){ box.innerHTML = '<div class="pad error">Mesajlar yüklenemedi.</div>'; return; }
-      const data = await r.json();
-      const me = await whoami();
 
-      box.innerHTML = (data.messages||[]).map(m=>{
-        const mine = m.sender_id === me?.id;
-        const time = m.created_at ? new Date(m.created_at).toLocaleString('tr-TR') : '';
-        return `<div class="bubble ${mine?'me':''}">
-          ${escapeHTML(m.body||'')}
-          <span class="time">${time}</span>
-        </div>`;
-      }).join('') || '<div class="pad muted">Henüz mesaj yok.</div>';
-
-      box.scrollTop = box.scrollHeight;
-    }
-
-    form?.addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const fd = new FormData(form);
-      const body = String(fd.get('body')||'').trim();
-      if (!body) return;
-      const r = await fetch(`${API}/api/messages/thread/${encodeURIComponent(id)}`, {
-        method:'POST',
-        credentials:'include',
-        headers:{'Content-Type':'application/json','Accept':'application/json'},
-        body: JSON.stringify({ body })
-      });
-      if (r.ok) {
-        form.reset();
-        await load();
-      }
-    });
-
-    function escapeHTML(s){ return (s??'').toString().replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
-    async function whoami(){
-      try{
-        const r=await fetch(`${API}/api/auth/me`,{credentials:'include',headers:{'Accept':'application/json'}});
-        if(!r.ok) return null; const d=await r.json(); return d.user||d;
-      }catch{ return null; }
-    }
-  })();
-  </script>
-  <script>includePartials();</script>
 </body>
 </html>
