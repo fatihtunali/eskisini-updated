@@ -15,18 +15,29 @@
 <body>
   <div data-include="partials/header.html"></div>
 
-<main class="container section account-wrap">
-  <h1 class="account-title">Hesabım</h1>
-  <p class="account-sub">Bilgilerin, siparişlerin ve iletişimlerin bir arada.</p>
+<section class="profile-tabs">
+ <nav id="tabs">
+  <a href="?tab=overview" data-tab="overview" class="active">Genel</a>
+  <a href="?tab=edit"     data-tab="edit">Düzenle</a>
+  <a href="?tab=orders"   data-tab="orders">Siparişlerim</a>
+</nav>
+<div id="ordersMount">
+  <div id="ordersEmpty" class="muted" hidden>Henüz siparişin yok.</div>
+  <table id="ordersTable" class="table" style="width:100%;display:none">
+    <thead>
+      <tr>
+        <th>Ürün</th>
+        <th>Fiyat</th>
+        <th>Durum</th>
+        <th>Tarih</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
-  <nav class="tabs" id="tabs">
-    <a href="?tab=overview" data-tab="overview">Özet</a>
-    <a href="?tab=edit" data-tab="edit">Profil Düzenle</a>
-    <a href="?tab=orders" data-tab="orders">Siparişlerim</a>
-  </nav>
+</section>
 
-  <section id="tab_content" class="section-gap"></section>
-</main>
 
   <div data-include="partials/footer.html"></div>
 
@@ -36,6 +47,10 @@
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/profile.js"></script>
+<script src="js/session.js"></script>
+<script src="js/buy.js"></script>
+<script src="/js/orders-tab.js"></script>
+
 <script>includePartials();</script>
 
 </body>

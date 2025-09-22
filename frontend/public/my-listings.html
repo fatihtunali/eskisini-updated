@@ -2,11 +2,9 @@
 <html lang="tr">
 <head>
   <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-  rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
 
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>İlanlarım</title>
@@ -30,13 +28,13 @@
 
   <div data-include="partials/footer.html"></div>
 
-  <!-- Sıra önemli: partials → header → config → auth → my-listings -->
+  <!-- Sıra: partials → config → auth → session → header → buy → my-listings -->
   <script src="js/partials.js"></script>
-  <script src="js/header.js"></script>
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
-
-  <!-- Dosya adı: ya bunu oluşturun ya da my-listings.js’yi bu isimle koyduğunuzdan emin olun -->
+  <script src="js/session.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/buy.js"></script>
   <script src="js/my-listings.js"></script>
 
   <script>includePartials();</script>

@@ -1,5 +1,4 @@
 // public/js/home.js
-
 window.addEventListener('DOMContentLoaded', () => {
   if (typeof includePartials === 'function') includePartials();
   boot();
@@ -65,24 +64,34 @@ function setParams(obj){
   history.replaceState(null,'',u.toString());
 }
 
-// Kartlar
+// 🔧 Kart şablonu (artık tüm kart <a> değil): data-listing-id + .btn-buy eklendi
 function productCard(x){
   const cover = x.cover || 'assets/hero.jpg';
   const href  = `listing.html?slug=${encodeURIComponent(x.slug)}`;
+
   return `
-    <a class="product card" href="${href}">
-      <div class="media"><img src="${cover}" alt="${h(x.title)}" data-fallback></div>
+    <article class="card product-card" data-listing-id="${x.id}">
+      <div class="media">
+        <a class="thumb" href="${href}">
+          <img src="${cover}" alt="${h(x.title)}" data-fallback>
+        </a>
+      </div>
       <div class="pad">
         <div class="p-meta">
           <div class="p-price">${fmtPrice(x.price_minor, x.currency)}</div>
           <div class="p-views" aria-label="Görüntülenme">👁 ${Math.floor(50 + Math.random()*250)}</div>
         </div>
-        <div class="p-title">${h(x.title)}</div>
+        <h3 class="p-title"><a href="${href}">${h(x.title)}</a></h3>
         <div class="p-sub muted">${h(x.location_city || '')}</div>
+        <div class="actions" style="display:flex;gap:8px;margin-top:8px">
+          <a class="btn" href="${href}">Görüntüle</a>
+          <button class="btn btn-buy" type="button">Satın Al</button>
+        </div>
       </div>
-    </a>
+    </article>
   `;
 }
+
 function categoryListItem(c){
   return `<li><a href="index.html?cat=${encodeURIComponent(c.slug)}" data-cat-link="${h(c.slug)}">${h(c.name)}</a></li>`;
 }
@@ -141,7 +150,6 @@ async function loadCategories(){
     if (categories.length){
       if (listEl) listEl.innerHTML = categories.map(categoryListItem).join('');
       if (selEl){
-        // Select: önce “Tümü” var, üstüne ekle
         categories.forEach(c=>{
           const opt = document.createElement('option');
           opt.value = c.slug; opt.textContent = c.name;
@@ -159,7 +167,7 @@ async function loadCategories(){
   }
 }
 
-// Ürünleri getir (önde çıkanlar/sonuç)
+// Ürünleri getir (öne çıkanlar/sonuç)
 async function loadFeatured(){
   const box = document.getElementById('featured');
   const title = document.getElementById('hFeatured');

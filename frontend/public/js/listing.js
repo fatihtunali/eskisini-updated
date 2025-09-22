@@ -1,4 +1,4 @@
-// frontend/public/js/listing.js
+// public/js/listing.js
 (function(){
   const API = window.APP.API_BASE;
   const $  = (s, r=document) => r.querySelector(s);
@@ -23,6 +23,7 @@
     history.replaceState(null,'',u.toString());
   }
 
+  // 🔧 Kart şablonu: data-listing-id + .btn-buy eklendi (overlay sorunlarını da azaltır)
   function cardHTML(x){
     const img = x.cover || '/assets/placeholder.png';
     const href = `/listing.html?slug=${encodeURIComponent(x.slug)}`;
@@ -34,9 +35,11 @@
     const favCount = Number.isFinite(x.favorites_count) ? x.favorites_count : 0;
 
     return `
-      <article class="card ${highlight?'highlight':''}">
+      <article class="card product-card ${highlight?'highlight':''}" data-listing-id="${x.id}">
         <div class="media">
-          <a href="${href}"><img loading="lazy" src="${img}" alt="${esc(x.title)}"></a>
+          <a class="thumb" href="${href}">
+            <img loading="lazy" src="${img}" alt="${esc(x.title)}">
+          </a>
         </div>
         <div class="pad">
           <div class="badges">
@@ -48,8 +51,9 @@
             ${x.location_city ? `<span class="city">${esc(x.location_city)}</span>`:''}
           </div>
           <div class="price">${money(x.price_minor, x.currency||'TRY')}</div>
-          <div class="card-actions">
+          <div class="card-actions actions">
             <a class="btn" href="${href}">Görüntüle</a>
+            <button class="btn btn-buy" type="button">Satın Al</button>
             <span class="fav-count">${favCount}</span>
             ${favBtn}
           </div>
@@ -118,5 +122,48 @@
     };
   }
 
+  // Detay sayfasındaki #btnBuy için mevcut koruma (buy.js delegation zaten yakalıyor)
+  (function(){
+    const API = (window.APP && APP.API_BASE) || '';
+    function toast(msg){ alert(msg); }
+    async function createOrder(listingId){
+      const r = await fetch(`${API}/api/orders`, {
+        method:'POST',
+        credentials:'include',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body: JSON.stringify({ listing_id: listingId })
+      });
+      if (r.status === 401) {
+        location.href = `/login.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+        return null;
+      }
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || 'ORDER_FAIL');
+      return d;
+    }
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const btn = document.getElementById('btnBuy');
+      const listingId = Number(new URL(location.href).searchParams.get('id')); // slug kullanıyorsak data-listing-id yoluna güveniyoruz
+      if (!btn) return;
+      btn.removeAttribute('onclick'); // inline onclick varsa kaldır
+      if (!listingId) return;
+      btn.addEventListener('click', async ()=>{
+        btn.disabled = true;
+        try{
+          const res = await createOrder(listingId);
+          if (!res) return;
+          toast('Sipariş oluşturuldu.');
+          location.href = '/profile.html#orders';
+        }catch(e){
+          console.error(e);
+          toast('Sipariş oluşturulamadı.');
+        }finally{
+          btn.disabled = false;
+        }
+      });
+    });
+  })();
+
   window.addEventListener('DOMContentLoaded', load);
 })();
+console.log('[LISTING] script loaded');
