@@ -11,6 +11,26 @@
   <title>Hesabım | Eskisini Ver Yenisini Al</title>
   <link rel="stylesheet" href="/css/styles.css" />
   <link rel="stylesheet" href="/css/profile.css" />
+
+  <style>
+    /* Billing kart/çubukları için küçük dokunuşlar (opsiyonel) */
+    .billing-wrap { display: grid; gap: 16px; }
+    .current-plan-card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:16px; }
+    .plan-header { display:flex; align-items:center; gap:12px; }
+    .plan-icon { font-size:28px; }
+    .plan-info .plan-name { font-weight:700; }
+    .plan-badge { padding:4px 8px; border-radius:999px; font-size:.8rem; font-weight:600; background:#f3f4f6; margin-left:auto; }
+    .usage-bars { display:grid; gap:12px; }
+    .usage-bar-container { background:#fff; border:1px dashed #e5e7eb; border-radius:10px; padding:12px; }
+    .usage-bar-header { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+    .usage-bar { height:10px; background:#f3f4f6; border-radius:999px; overflow:hidden; margin-top:8px; }
+    .usage-fill { height:100%; background:#3b82f6; }
+    .usage-fill.warning { background:#f59e0b; }
+    .usage-fill.danger { background:#ef4444; }
+    .usage-warning { margin-top:6px; font-size:.9rem; color:#b45309; }
+    .usage-warning.warning { color:#92400e; }
+    .btn.primary { background:#111827; color:#fff; border-radius:10px; padding:10px 14px; border:0; cursor:pointer; }
+  </style>
 </head>
 <body>
   <!-- HEADER -->
@@ -23,9 +43,11 @@
         <a href="?tab=edit"       data-tab="edit"       role="tab" aria-selected="false" tabindex="-1">Düzenle</a>
         <a href="?tab=orders"     data-tab="orders"     role="tab" aria-selected="false" tabindex="-1">Siparişlerim</a>
         <a href="?tab=mylistings" data-tab="mylistings" role="tab" aria-selected="false" tabindex="-1">İlanlarım</a>
+        <!-- YENİ: Abonelik/Plan sekmesi -->
+        <a href="?tab=billing"    data-tab="billing"    role="tab" aria-selected="false" tabindex="-1">Abonelik</a>
       </nav>
 
-      <!-- profile.js buraya render eder -->
+      <!-- profile.js varsayılan sekmeleri buraya render eder; billing sekmesini aşağıdaki script doldurur -->
       <div id="tab_content" role="tabpanel" aria-live="polite"></div>
     </section>
   </main>
@@ -33,7 +55,7 @@
   <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>
 
-  <!-- JS sırası - sadece gerekli olanlar -->
+  <!-- JS sırası - mevcut modüller -->
   <script src="/js/partials.js"></script>
   <script src="/js/config.js"></script>
   <script src="/js/api.js"></script>
@@ -42,6 +64,94 @@
   <script src="/js/header.js"></script>
   <script src="/js/profile.js"></script>
 
-  <script>includePartials();</script>
+  <!-- ÖNEMLİ: billing sistemi -->
+  <script src="/js/billing.js"></script>
+
+  <script>
+    // Header/Footer
+    includePartials();
+
+    // ---------- Basit sekme yöneticisi (profile.js ile çakışmayacak şekilde sadece billing için devreye girer) ----------
+    (function() {
+      const tabsEl = document.getElementById('tabs');
+      const panel = document.getElementById('tab_content');
+
+      const getTab = () => new URLSearchParams(location.search).get('tab') || 'overview';
+
+      function setActiveLink(tab) {
+        tabsEl.querySelectorAll('a[data-tab]').forEach(a => {
+          const active = a.dataset.tab === tab;
+          a.classList.toggle('active', active);
+          a.setAttribute('aria-selected', active ? 'true' : 'false');
+          a.setAttribute('tabindex', active ? '0' : '-1');
+        });
+      }
+
+      function renderBillingSkeleton() {
+        panel.innerHTML = `
+          <div class="billing-wrap">
+            <h2>Abonelik Planım</h2>
+            <div id="current_plan"></div>
+            <div id="usage_bars"></div>
+            <div>
+              <button class="btn primary" id="btn_upgrade_pro">Pro'ya Yükselt</button>
+              <button class="btn primary" id="btn_upgrade_business" style="margin-left:8px;">Business'a Yükselt</button>
+            </div>
+          </div>
+        `;
+      }
+
+      async function mountBilling() {
+        renderBillingSkeleton();
+
+        // BILLING hazırsa verileri çek ve render et
+        if (window.BILLING) {
+          const data = await BILLING.init();
+          if (data) {
+            BILLING.renderCurrentPlan('current_plan');
+            BILLING.renderUsageBars('usage_bars');
+          }
+
+          // Plan güncellenince otomatik yenile
+          document.addEventListener('billing:plan-updated', () => {
+            BILLING.renderCurrentPlan('current_plan');
+            BILLING.renderUsageBars('usage_bars');
+          });
+
+          // Hızlı yükseltme butonları
+          const btnPro = document.getElementById('btn_upgrade_pro');
+          const btnBiz = document.getElementById('btn_upgrade_business');
+          btnPro?.addEventListener('click', () => BILLING.showUpgradeModal('pro'));
+          btnBiz?.addEventListener('click', () => BILLING.showUpgradeModal('business'));
+        } else {
+          panel.innerHTML = `<div class="pad error">Faturalandırma modülü yüklenemedi.</div>`;
+        }
+      }
+
+      // Sekme değiştirme (sadece billing'e özel; diğerlerini profile.js yönetir)
+      tabsEl.addEventListener('click', (e) => {
+        const a = e.target.closest('a[data-tab]');
+        if (!a) return;
+        const tab = a.dataset.tab;
+        if (tab === 'billing') {
+          e.preventDefault();
+          history.pushState({}, '', a.getAttribute('href'));
+          setActiveLink('billing');
+          mountBilling();
+        }
+      });
+
+      window.addEventListener('popstate', () => {
+        const tab = getTab();
+        setActiveLink(tab);
+        if (tab === 'billing') mountBilling();
+      });
+
+      // İlk yüklemede URL tab=billing ise içeriği hazırla
+      const initial = getTab();
+      setActiveLink(initial);
+      if (initial === 'billing') mountBilling();
+    })();
+  </script>
 </body>
 </html>

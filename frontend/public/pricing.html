@@ -4,9 +4,7 @@
   <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -33,7 +31,7 @@
 <body>
   <div data-include="/partials/header.html"></div>
 
-  <main class="container section">
+  <main class="container section" data-billing>
     <h1 class="center">Basit ve Şeffaf Fiyatlandırma</h1>
     <p class="sub center">İhtiyacınıza uygun paketi seçin.</p>
     <div id="plans" class="grid pricing" aria-live="polite"></div>
@@ -47,6 +45,9 @@
   <script src="/js/session.js"></script>
   <script src="/js/header.js"></script>
 
+  <!-- ÖNEMLİ: billing.js'i ekle (modal, BillingAPI, BILLING.init burada) -->
+  <script src="/js/billing.js"></script>
+
   <script>
   (async function () {
     // partials (header/footer) yükle
@@ -55,7 +56,7 @@
     const API_BASE = (window.APP && window.APP.API_BASE) || '';
     const $ = (s,r=document)=>r.querySelector(s);
     const money = (m,c='TRY') => new Intl.NumberFormat('tr-TR',{style:'currency',currency:c}).format((Number(m)||0)/100);
-    const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
 
     async function getPlans(){
       const r = await fetch(`${API_BASE}/api/billing/plans`, { headers:{'Accept':'application/json'}, credentials:'include' });
@@ -63,15 +64,19 @@
       return r.json();
     }
 
-    // Not: Backend’de satın alma/abonelik başlatma endpoint’i yok.
-    // Bu yüzden şimdilik butonlar bilgi amaçlı / profil yönlendirmeli.
+    // Seç butonu davranışı: billing.js modalını kullan
     function handleChoose(code){
-      if (code === 'free') {
-        alert('Ücretsiz plan zaten aktiftir. Profilinize yönlendiriliyoruz.');
-        location.href = '/profile.html';
-      } else {
-        alert('Paket satın alma / yükseltme akışı yakında eklenecek.');
+      if (!window.BILLING) {
+        alert('Ödeme modülü yüklenemedi. Lütfen sayfayı yenileyin.');
+        return;
       }
+      if (code === 'free') {
+        // Ücretsiz ise direkt profille devam (plan zaten aktif olabilir)
+        location.href = '/profile.html#billing';
+        return;
+      }
+      // Pro veya Business -> modal aç
+      window.BILLING.showUpgradeModal(code);
     }
 
     const wrap = $('#plans');
@@ -87,13 +92,12 @@
       }
 
       wrap.innerHTML = plans.map(p => {
-        // perks backend’de dizi olarak geliyor — liste halinde render edelim
         const perks = Array.isArray(p.perks) ? p.perks : (p.perks ? [p.perks] : []);
         const period = p.period === 'monthly' ? 'ay' : (p.period === 'yearly' ? 'yıl' : p.period || '');
         const css =
-          p.code?.includes('pro')  ? 'price-pro' :
-          p.code?.includes('biz')  ? 'price-business' :
-                                     'price-free';
+          p.code?.includes('pro')      ? 'price-pro' :
+          p.code?.includes('business') ? 'price-business' :
+                                         'price-free';
 
         return `
           <article class="pricecard ${css}">
@@ -107,7 +111,7 @@
               <li>Yükseltme (bump): <b>${esc(p.bump_credits_month)}</b></li>
               <li>Öne çıkarma: <b>${esc(p.featured_credits_month)}</b></li>
               <li>Destek: <b>${esc(p.support_level || 'none')}</b></li>
-              ${perks.map(x=>`<li>${esc(x)}</li>`).join('')}
+              ${perks.map(x=>`<li>✅ ${esc(x)}</li>`).join('')}
             </ul>
             <button class="btn primary" data-plan="${esc(p.code)}">
               ${Number(p.price_minor) ? 'Seç' : 'Ücretsiz seç'}
@@ -116,6 +120,7 @@
         `;
       }).join('');
 
+      // “Seç” tıklamaları
       wrap.addEventListener('click', (e)=>{
         const btn = e.target.closest('button[data-plan]');
         if (!btn) return;
