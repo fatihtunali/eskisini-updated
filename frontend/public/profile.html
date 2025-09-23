@@ -8,8 +8,9 @@
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hesabım</title>
+  <title>Hesabım | Eskisini Ver Yenisini Al</title>
   <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/profile.css" />
 </head>
 <body>
   <!-- HEADER -->
@@ -17,34 +18,30 @@
 
   <main class="container section">
     <section class="profile-tabs">
-      <nav id="tabs" class="tabs" style="margin-bottom:12px">
-        <a href="?tab=overview"   data-tab="overview"   class="active">Genel</a>
-        <a href="?tab=edit"       data-tab="edit">Düzenle</a>
-        <a href="?tab=orders"     data-tab="orders">Siparişlerim</a>
-        <a href="?tab=mylistings" data-tab="mylistings">İlanlarım</a>
+      <nav id="tabs" class="tabs" role="tablist" style="margin-bottom:12px">
+        <a href="?tab=overview"   data-tab="overview"   class="active" role="tab" aria-selected="true" tabindex="0">Genel</a>
+        <a href="?tab=edit"       data-tab="edit"       role="tab" aria-selected="false" tabindex="-1">Düzenle</a>
+        <a href="?tab=orders"     data-tab="orders"     role="tab" aria-selected="false" tabindex="-1">Siparişlerim</a>
+        <a href="?tab=mylistings" data-tab="mylistings" role="tab" aria-selected="false" tabindex="-1">İlanlarım</a>
       </nav>
 
       <!-- profile.js buraya render eder -->
-      <div id="tab_content"></div>
+      <div id="tab_content" role="tabpanel" aria-live="polite"></div>
     </section>
   </main>
 
   <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>
 
-  <!-- JS sırası -->
-<script src="/js/partials.js"></script>
-<script src="/js/config.js"></script>
-<script src="/js/api.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/session.js"></script>
-<script src="/js/header.js"></script>
+  <!-- JS sırası - sadece gerekli olanlar -->
+  <script src="/js/partials.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/session.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/profile.js"></script>
 
-<!-- sayfaya özel -->
-<script src="/js/messages.js"></script>   <!-- gerekiyorsa -->
-<script src="/js/profile.js"></script>    <!-- gerekiyorsa -->
-<script src="/js/listing.js"></script>    <!-- gerekiyorsa -->
-
-<script>includePartials();</script>
+  <script>includePartials();</script>
 </body>
 </html>

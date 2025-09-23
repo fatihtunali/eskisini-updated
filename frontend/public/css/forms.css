@@ -1,0 +1,507 @@
+/* css/forms.css - Sell/İlan Ver ve diğer form sayfaları için özel stiller */
+
+/* ================================
+   SELL PAGE LAYOUT
+   ================================ */
+.sell-form {
+  max-width: 1050px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+.sell-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: clamp(22px, 2.4vw, 28px);
+  margin: 18px 0 14px;
+  color: var(--fg, #0f172a);
+}
+
+.sell-subtitle {
+  text-align: center;
+  color: var(--muted, #6b7280);
+  margin-bottom: 24px;
+}
+
+/* ================================
+   FORM CARD
+   ================================ */
+.form-card {
+  background: #fff;
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 16px;
+  padding: clamp(16px, 2vw, 24px);
+  box-shadow: 0 6px 18px rgba(0,0,0,.04);
+}
+
+.form-section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line, #e5e7eb);
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.form-section h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  color: var(--fg, #111827);
+}
+
+.form-section .section-description {
+  color: var(--muted, #6b7280);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* ================================
+   FORM GRID
+   ================================ */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 20px;
+}
+
+.form-span-2 {
+  grid-column: span 2;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--fg, #111827);
+}
+
+.form-field .req {
+  color: #e11d48;
+  margin-left: 4px;
+}
+
+.form-field .optional {
+  color: var(--muted, #6b7280);
+  font-weight: 400;
+  font-size: 12px;
+}
+
+/* ================================
+   FORM INPUTS
+   ================================ */
+.form-field input[type="text"],
+.form-field input[type="number"],
+.form-field input[type="email"],
+.form-field input[type="tel"],
+.form-field input[type="url"],
+.form-field select,
+.form-field textarea {
+  border: 1px solid var(--line, #e5e7eb);
+  background: #fff;
+  color: var(--fg, #111827);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+.form-field select {
+  cursor: pointer;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  border-color: var(--brand, #f59e0b);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, .12);
+}
+
+.form-field input:disabled,
+.form-field select:disabled,
+.form-field textarea:disabled {
+  background: #f9fafb;
+  color: var(--muted, #6b7280);
+  cursor: not-allowed;
+}
+
+/* ================================
+   PRICE INPUT GROUP
+   ================================ */
+.price-group {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.price-input {
+  flex: 1;
+}
+
+.currency-select {
+  flex: 0 0 80px;
+}
+
+.price-group input,
+.price-group select {
+  height: 100%;
+}
+
+/* ================================
+   FILE UPLOAD
+   ================================ */
+.file-upload {
+  border: 2px dashed var(--line, #e5e7eb);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  background: #fafafa;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.file-upload:hover {
+  border-color: var(--brand, #f59e0b);
+  background: #fef7ed;
+}
+
+.file-upload.dragover {
+  border-color: var(--brand, #f59e0b);
+  background: #fef7ed;
+  transform: scale(1.02);
+}
+
+.file-upload input[type="file"] {
+  display: none;
+}
+
+.file-upload .upload-icon {
+  font-size: 32px;
+  color: var(--muted, #6b7280);
+  margin-bottom: 8px;
+}
+
+.file-upload .upload-text {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.file-upload .upload-hint {
+  color: var(--muted, #6b7280);
+  font-size: 12px;
+}
+
+/* Preview thumbnails */
+.file-previews {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.file-preview {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.file-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-preview .remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ================================
+   CHECKBOX & RADIO
+   ================================ */
+.checkbox, .radio {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-weight: 500;
+  margin: 12px 0;
+}
+
+.checkbox input[type="checkbox"],
+.radio input[type="radio"] {
+  margin-top: 2px;
+  accent-color: var(--brand, #f59e0b);
+}
+
+.checkbox span,
+.radio span {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.checkbox-group,
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ================================
+   HELP TEXT
+   ================================ */
+.help {
+  color: var(--muted, #6b7280);
+  font-size: 12px;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.help-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted, #6b7280);
+}
+
+.help-row .char-count {
+  font-weight: 600;
+}
+
+.help.error {
+  color: #e11d48;
+}
+
+.help.success {
+  color: #10b981;
+}
+
+/* ================================
+   FORM ACTIONS
+   ================================ */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line, #e5e7eb);
+}
+
+.form-actions .left {
+  display: flex;
+  gap: 12px;
+}
+
+.form-actions .right {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-primary {
+  background: var(--brand, #f59e0b);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform .04s ease, filter .15s ease;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: #fff;
+  color: var(--muted, #6b7280);
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: var(--fg, #111827);
+}
+
+.btn-draft {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.btn-draft:hover {
+  background: #e5e7eb;
+}
+
+/* ================================
+   FORM STATES
+   ================================ */
+.form-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.form-error {
+  border-color: #e11d48 !important;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, .12) !important;
+}
+
+.form-success {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, .12) !important;
+}
+
+/* ================================
+   LOADING BUTTON STATE
+   ================================ */
+.btn-primary.loading {
+  position: relative;
+  color: transparent;
+}
+
+.btn-primary.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* ================================
+   RESPONSIVE
+   ================================ */
+@media (max-width: 880px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-span-2 {
+    grid-column: auto;
+  }
+  
+  .price-group {
+    flex-direction: column;
+  }
+  
+  .currency-select {
+    flex: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .sell-form {
+    padding: 0 12px;
+  }
+  
+  .form-card {
+    padding: 16px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions .left,
+  .form-actions .right {
+    width: 100%;
+    justify-content: stretch;
+  }
+  
+  .btn-primary,
+  .btn-secondary,
+  .btn-draft {
+    flex: 1;
+  }
+  
+  .file-previews {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sell-title {
+    font-size: 20px;
+  }
+  
+  .form-section h3 {
+    font-size: 16px;
+  }
+  
+  .form-actions .left,
+  .form-actions .right {
+    flex-direction: column;
+  }
+}
