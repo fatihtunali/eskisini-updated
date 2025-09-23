@@ -2,97 +2,110 @@
 <html lang="tr">
 <head>
   <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-  rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
 
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Kayıt Ol</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
   <!-- HEADER -->
   <div data-include="partials/header.html"></div>
 
   <!-- ORTALANMIŞ KART -->
-<section class="auth container">
-  <h1 class="auth-title">Kayıt ol</h1>
+  <section class="auth container">
+    <h1 class="auth-title">Kayıt Ol</h1>
+    <p class="auth-sub">Hesabınızı oluşturmak için bilgilerinizi doldurun.</p>
 
-  <form id="regForm" class="form-card" novalidate>
-    <div id="regMsg" class="msg" hidden></div>
+    <form id="regForm" class="form-card" data-auth="register" novalidate>
+      <div id="regMsg" class="form-msg" hidden></div>
 
-    <div class="form-grid">
-      <div class="form-field">
-        <label for="fullName">İsim Soyad <span class="req">*</span></label>
-        <input id="fullName" name="full_name" type="text" autocomplete="name" required />
-      </div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="fullName">İsim Soyad <span class="req">*</span></label>
+          <input id="fullName" name="full_name" type="text" autocomplete="name" required />
+        </div>
 
-      <div class="form-field">
-        <label for="username">Kullanıcı Adı <span class="req">*</span></label>
-        <input id="username" name="username" type="text" minlength="3" maxlength="60" required />
-        <p class="help">En az 3 karakter, benzersiz</p>
-      </div>
+        <div class="form-field">
+          <label for="username">Kullanıcı Adı <span class="req">*</span></label>
+          <input id="username" name="username" type="text" minlength="3" maxlength="60" required />
+          <p class="help">En az 3 karakter, benzersiz olmalı</p>
+        </div>
 
-      <div class="form-field">
-        <label for="regEmail">E-posta <span class="req">*</span></label>
-        <input id="regEmail" name="email" type="email" autocomplete="email" required />
-      </div>
+        <div class="form-field">
+          <label for="regEmail">E-posta <span class="req">*</span></label>
+          <input id="regEmail" name="email" type="email" autocomplete="email" required />
+        </div>
 
-      <div class="form-field">
-        <label for="phone">Telefon (E.164)</label>
-        <input id="phone" name="phone_e164" type="tel" inputmode="tel" placeholder="+905551112233" />
-      </div>
+        <div class="form-field">
+          <label for="phone">Telefon (E.164)</label>
+          <input id="phone" name="phone_e164" type="tel" inputmode="tel" placeholder="+905551112233" />
+        </div>
 
-      <div class="form-field">
-        <label for="regPass">Şifre <span class="req">*</span></label>
-        <div class="input-with-btn">
-          <input id="regPass" name="password" type="password" minlength="6"
+        <div class="form-field">
+          <label for="regPass">Şifre <span class="req">*</span></label>
+          <div class="input-with-btn">
+            <input id="regPass" name="password" type="password" minlength="6"
+                   autocomplete="new-password" required />
+            <button type="button" class="btn-ghost" id="toggleRegPass">👁</button>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="regPass2">Şifre (Tekrar) <span class="req">*</span></label>
+          <input id="regPass2" name="password2" type="password" minlength="6"
                  autocomplete="new-password" required />
-          <button type="button" class="btn-ghost" id="toggleRegPass">👁</button>
+          <p class="help">Şifre ile aynı olmalı</p>
+        </div>
+
+        <div class="form-field form-span-2">
+          <label for="tcno">TC Kimlik No <small>(opsiyonel)</small></label>
+          <input id="tcno" name="tc_no" type="text" inputmode="numeric" maxlength="11" placeholder="11 hane" />
+        </div>
+
+        <div class="form-field form-span-2">
+          <label class="checkbox">
+            <input type="checkbox" id="terms" required />
+            <span>Kullanım Şartları ve Gizlilik’i kabul ediyorum.</span>
+          </label>
         </div>
       </div>
 
-      <div class="form-field">
-        <label for="regPass2">Şifre (tekrar) <span class="req">*</span></label>
-        <input id="regPass2" name="password2" type="password" minlength="6"
-               autocomplete="new-password" required />
-        <p class="help">Şifre ile aynı olmalı</p>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Hesabımı Oluştur</button>
       </div>
+    </form>
 
-      <div class="form-field form-span-2">
-        <label for="tcno">TC Kimlik No <small>(opsiyonel)</small></label>
-        <input id="tcno" name="tc_no" type="text" inputmode="numeric" maxlength="11" placeholder="11 hane" />
-      </div>
-
-      <div class="form-field form-span-2">
-        <label class="checkbox">
-          <input type="checkbox" id="terms" required />
-          <span>Kullanım Şartları ve Gizlilik’i kabul ediyorum.</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="form-actions">
-      <button type="submit" class="btn-primary">Hesabımı oluştur</button>
-    </div>
-  </form>
-
-  <p class="auth-alt">Zaten üye misin? <a href="/login.html">Giriş yap</a></p>
-</section>
+    <p class="auth-alt">Zaten üye misiniz? <a href="/login.html">Giriş yapın</a></p>
+  </section>
 
   <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>
 
-<script src="js/partials.js"></script>
-<script src="js/config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/register.js"></script> <!-- EKLENDİ -->
-<script src="js/session.js"></script>
-<script src="js/buy.js"></script>
+  <!-- JS -->
+  <script src="/js/partials.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/register.js"></script>
+  <script src="/js/session.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/buy.js"></script>
+  <script>
+    if (typeof includePartials === 'function') includePartials();
 
-<script>includePartials();</script>
-
+    // Şifre göster/gizle
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.getElementById('toggleRegPass');
+      const input = document.getElementById('regPass');
+      if (toggle && input) {
+        toggle.addEventListener('click', () => {
+          input.type = input.type === 'password' ? 'text' : 'password';
+        });
+      }
+    });
+  </script>
 </body>
 </html>

@@ -30,7 +30,7 @@
     form.addEventListener('submit', (e)=>{
       e.preventDefault();
       const q = (document.getElementById('q')?.value || '').trim();
-      const u = new URL('/search.html', location.origin);
+      const u = new URL('/index.html', location.origin);
       if (q) u.searchParams.set('q', q);
       location.href = u.toString();
     }, { once:true });

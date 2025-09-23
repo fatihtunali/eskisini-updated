@@ -2,134 +2,135 @@
 <html lang="tr">
 <head>
   <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-  rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
 
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>İlan Ver</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
 
-<div data-include="partials/header.html"></div>
+  <!-- HEADER -->
+  <div data-include="partials/header.html"></div>
 
-<!-- Yeni İlan -->
-<section class="sell-form container">
-  <h1 class="sell-title">Yeni İlan</h1>
+  <!-- Yeni İlan -->
+  <section class="sell-form container">
+    <h1 class="sell-title">Yeni İlan</h1>
 
-  <form id="sellForm" class="form-card" novalidate>
-    <div class="form-grid">
-      <!-- Kategori -->
-      <div class="form-field">
-        <label for="mainCat">Ana Kategori <span class="req">*</span></label>
-        <select id="mainCat" name="category_main" required>
-          <option value="">Seçiniz…</option>
-          <!-- JS ile dolduruluyor -->
-        </select>
-        <p class="help">Önce ana kategoriyi seçin</p>
-      </div>
+    <form id="sellForm" class="form-card" novalidate>
+      <div class="form-grid">
+        <!-- Kategori -->
+        <div class="form-field">
+          <label for="mainCat">Ana Kategori <span class="req">*</span></label>
+          <select id="mainCat" name="category_main" required>
+            <option value="">Seçiniz…</option>
+            <!-- JS dolduracak -->
+          </select>
+          <p class="help">Önce ana kategoriyi seçin</p>
+        </div>
 
-      <div class="form-field">
-        <label for="subCat">Alt Kategori</label>
-        <select id="subCat" name="category_sub" disabled>
-          <option value="">Önce ana kategori</option>
-        </select>
-        <p class="help">Varsa alt kategori seçin</p>
-      </div>
+        <div class="form-field">
+          <label for="subCat">Alt Kategori</label>
+          <select id="subCat" name="category_sub" disabled>
+            <option value="">Önce ana kategori</option>
+          </select>
+          <p class="help">Varsa alt kategori seçin</p>
+        </div>
 
-      <!-- Başlık & Slug -->
-      <div class="form-field">
-        <label for="title">Başlık <span class="req">*</span></label>
-        <input id="title" name="title" type="text" placeholder="İlan başlığı" required />
-        <p class="help">Kısa ve açıklayıcı bir başlık yazın</p>
-      </div>
+        <!-- Başlık & Slug -->
+        <div class="form-field">
+          <label for="title">Başlık <span class="req">*</span></label>
+          <input id="title" name="title" type="text" placeholder="İlan başlığı" required />
+          <p class="help">Kısa ve açıklayıcı bir başlık yazın</p>
+        </div>
 
-      <div class="form-field">
-        <label for="slug">URL Slug <small>(opsiyonel)</small></label>
-        <input id="slug" name="slug" type="text" placeholder="Boş bırakırsanız otomatik oluşur" />
-      </div>
+        <div class="form-field">
+          <label for="slug">URL Slug <small>(opsiyonel)</small></label>
+          <input id="slug" name="slug" type="text" placeholder="Boş bırakırsanız otomatik oluşur" />
+        </div>
 
-      <!-- Açıklama -->
-      <div class="form-field form-span-2">
-        <label for="desc">Açıklama</label>
-        <textarea id="desc" name="description_md" rows="4" placeholder="Ürünün durumunu, aksesuarlarını vb. belirtin"></textarea>
-      </div>
+        <!-- Açıklama -->
+        <div class="form-field form-span-2">
+          <label for="desc">Açıklama</label>
+          <textarea id="desc" name="description_md" rows="4" placeholder="Ürünün durumunu, aksesuarlarını vb. belirtin"></textarea>
+        </div>
 
-      <!-- Fiyat & Para Birimi -->
-      <div class="form-field">
-        <label for="price">Fiyat (TL) <span class="req">*</span></label>
-        <input id="price" name="price_display" type="text" inputmode="decimal" placeholder="Örn: 12.499,90" required />
-        <input id="price_minor" name="price_minor" type="hidden" />
-        <p class="help">Noktayı binlik, virgülü kuruş için kullanabilirsiniz</p>
-      </div>
+        <!-- Fiyat & Para Birimi -->
+        <div class="form-field">
+          <label for="price">Fiyat (TL) <span class="req">*</span></label>
+          <input id="price" name="price_display" type="text" inputmode="decimal" placeholder="Örn: 12.499,90" required />
+          <input id="price_minor" name="price_minor" type="hidden" />
+          <p class="help">Noktayı binlik, virgülü kuruş için kullanabilirsiniz</p>
+        </div>
 
-      <div class="form-field">
-        <label for="currency">Para Birimi</label>
-        <select id="currency" name="currency">
-          <option value="TRY" selected>TRY</option>
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-        </select>
-      </div>
+        <div class="form-field">
+          <label for="currency">Para Birimi</label>
+          <select id="currency" name="currency">
+            <option value="TRY" selected>TRY</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </div>
 
-      <!-- Durum & Şehir -->
-      <div class="form-field">
-        <label for="condition">Ürün Durumu</label>
-        <select id="condition" name="condition_grade">
-          <option value="new">new (sıfır)</option>
-          <option value="like_new">like_new (çok iyi)</option>
-          <option value="good" selected>good (iyi)</option>
-          <option value="fair">fair (orta)</option>
-          <option value="poor">poor (zayıf)</option>
-        </select>
-      </div>
+        <!-- Durum & Şehir -->
+        <div class="form-field">
+          <label for="condition">Ürün Durumu</label>
+          <select id="condition" name="condition_grade">
+            <option value="new">Yeni (sıfır)</option>
+            <option value="like_new">Çok iyi (like new)</option>
+            <option value="good" selected>İyi</option>
+            <option value="fair">Orta</option>
+            <option value="poor">Zayıf</option>
+          </select>
+        </div>
 
-      <div class="form-field">
-        <label for="city">Şehir</label>
-        <input id="city" name="location_city" type="text" placeholder="Örn: İstanbul" />
-      </div>
+        <div class="form-field">
+          <label for="city">Şehir</label>
+          <input id="city" name="location_city" type="text" placeholder="Örn: İstanbul" />
+        </div>
 
-      <!-- Görseller -->
-      <div class="form-field form-span-2">
-        <label for="images">Görsel URL’leri</label>
-        <textarea id="images" name="image_urls" rows="4" placeholder="Her satıra bir URL yazın"></textarea>
-        <div class="help-row">
-          <p class="help">İlk görsel kapak olarak kullanılacak</p>
-          <p class="help"><span id="imgCount">0</span> görsel</p>
+        <!-- Görseller -->
+        <div class="form-field form-span-2">
+          <label for="images">Görsel URL’leri</label>
+          <textarea id="images" name="image_urls" rows="4" placeholder="Her satıra bir URL yazın"></textarea>
+          <div class="help-row">
+            <p class="help">İlk görsel kapak olarak kullanılacak</p>
+            <p class="help"><span id="imgCount">0</span> görsel</p>
+          </div>
+        </div>
+
+        <!-- Takas -->
+        <div class="form-field">
+          <label class="checkbox">
+            <input type="checkbox" id="allow_trade" name="allow_trade" />
+            Takasa uygun
+          </label>
         </div>
       </div>
 
-      <!-- Takas -->
-      <div class="form-field">
-        <label class="checkbox">
-          <input type="checkbox" id="allow_trade" name="allow_trade" checked />
-          Takasa uygun
-        </label>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Kaydet</button>
       </div>
-    </div>
+    </form>
+  </section>
 
-    <div class="form-actions">
-      <button type="submit" class="btn-primary">Kaydet</button>
-    </div>
-  </form>
-</section>
+  <!-- FOOTER -->
+  <div data-include="partials/footer.html"></div>
 
-
-<div data-include="partials/footer.html"></div>
-
-<!-- JS -->
-<script src="js/partials.js"></script>
-<script src="js/header.js"></script>
-<script src="js/config.js"></script>
-<script src="js/api.js"></script>
-<script src="js/auth.js" defer></script>
-<script src="js/sell.js"></script>
-<script src="js/session.js"></script>
-<script src="js/buy.js"></script>
-
-<script>includePartials();</script>
+  <!-- JS -->
+  <script src="/js/partials.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/session.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/sell.js"></script>
+  <script src="/js/buy.js"></script>
+  <script>
+    if (typeof includePartials === 'function') includePartials();
+  </script>
 </body>
 </html>

@@ -8,7 +8,8 @@
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>İlan Detayı</title>
+  <title>İlan Detayı | Eskisini Ver Yenisini Al</title>
+
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/css/fav.css">
   <style>
@@ -18,8 +19,10 @@
   </style>
 </head>
 <body>
+  <!-- HEADER -->
   <div data-include="partials/header.html"></div>
 
+  <!-- CONTENT -->
   <main class="container section">
     <div id="detail" class="listing card">
       <div class="media">
@@ -32,13 +35,15 @@
 
         <div class="card-actions actions" style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" id="msgBtn" type="button">Satıcıya Mesaj</button>
+
           <span class="fav-count" id="favCount">0</span>
-          <button class="fav-btn" id="favBtn" data-listing-id="">
+          <button class="fav-btn" id="favBtn" data-listing-id="" aria-label="Favoriye ekle/çıkar">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path class="heart" d="M12 21s-6.7-4.35-9.33-7C.34 11.64.63 8.39 3 6.67A5.09 5.09 0 0 1 12 8a5.09 5.09 0 0 1 9-1.33C23.37 8.39 23.66 11.64 21.33 14 18.7 16.65 12 21 12 21z"/>
             </svg>
           </button>
-          <!-- Satın Al: buy.js delegation'ın yakalaması için class + data eklenecek -->
+
+          <!-- Satın Al: buy.js delegation yakalar -->
           <button id="btnBuy" class="btn primary" type="button">Satın Al</button>
         </div>
 
@@ -47,84 +52,29 @@
     </div>
   </main>
 
+  <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>
 
-  <!-- Sıra: partials → config → api/fav → auth → session → header → buy -->
-<script src="/js/partials.js"></script>
-<script src="/js/config.js"></script>
-<script src="/js/api.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/session.js"></script>
-<script src="/js/header.js"></script>
+  <!-- SCRIPTS (doğru sıra) -->
+  <script src="/js/partials.js"></script>
+  <script src="/js/config.js"></script>
 
-<!-- sayfaya özel -->
-<script src="/js/messages.js"></script>   <!-- gerekiyorsa -->
-<script src="/js/profile.js"></script>    <!-- gerekiyorsa -->
-<script src="/js/listing.js"></script>    <!-- gerekiyorsa -->
+  <!-- Favoriler için -->
+  <script src="/js/fav.js"></script>
 
-<script>includePartials();</script>
+  <!-- Genel oturum/header -->
+  <script src="/js/auth.js"></script>
+  <script src="/js/session.js"></script>
+  <script src="/js/header.js"></script>
+
+  <!-- Satın alma delegasyonu -->
+  <script src="/js/buy.js"></script>
+
+  <!-- Sayfa mantığı (detay yükleme, fav hydrate, mesaj başlatma) -->
+  <script src="/js/listing.js"></script>
 
   <script>
-  (async function(){
-    if (typeof includePartials === 'function') includePartials();
-
-    const API = window.APP.API_BASE;
-    const $ = (s,r=document)=>r.querySelector(s);
-    const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-    const money = (minor, cur='TRY') => new Intl.NumberFormat('tr-TR',{style:'currency',currency:cur}).format((minor||0)/100);
-
-    // URL: ?slug=...
-    const u = new URL(location.href);
-    const slug = u.searchParams.get('slug');
-    if (!slug) { location.href = '/'; return; }
-
-    try{
-      const res = await fetch(`${API}/api/listings/${encodeURIComponent(slug)}`, {
-        headers:{'Accept':'application/json'}
-      });
-      if (!res.ok) throw new Error('HTTP '+res.status);
-
-      const data = await res.json();
-      if (!data?.ok) throw new Error('not_ok');
-
-      const L = data.listing;
-      const imgs = data.images || [];
-
-      // Temel alanlar
-      $('#title').textContent = L.title || '';
-      $('#meta').textContent  = [L.category_name, L.location_city].filter(Boolean).join(' • ');
-      $('#price').textContent = money(L.price_minor, L.currency || 'TRY');
-      $('#desc').innerHTML    = `<pre style="white-space:pre-wrap">${esc(L.description_md||'')}</pre>`;
-      $('#img').src           = (imgs[0]?.file_url) || '/assets/placeholder.png';
-
-      // ❤️ Favori hydrate
-      const favBtn   = $('#favBtn');
-      const favCount = $('#favCount');
-      favBtn.dataset.listingId = L.id;
-      favCount.textContent = String(L.favorites_count ?? 0);
-      if (window.FAV) await FAV.wireFavButtons(document);
-
-      // 🔧 SATIN AL: buy.js delegation için ID ve class ekle
-      const buyBtn = $('#btnBuy');
-      if (buyBtn) {
-        buyBtn.classList.add('btn-buy');           // selector
-        buyBtn.dataset.listingId = String(L.id);   // hangi ilan?
-        buyBtn.removeAttribute('onclick');         // varsa inline onclick temizle
-      }
-
-      // 💬 MESAJ: satıcıya geçiş (akışına göre URL'i özelleştir)
-      const msgBtn = $('#msgBtn');
-      if (msgBtn) {
-        const sellerId = L.seller_id || L.user_id; // tablo sütununa göre
-        msgBtn.addEventListener('click', () => {
-          location.href = `/thread.html?listing=${encodeURIComponent(L.id)}&seller=${encodeURIComponent(sellerId)}`;
-        });
-      }
-    }catch(e){
-      console.error(e);
-      $('#detail').innerHTML = `<div class="pad error">İlan bulunamadı.</div>`;
-    }
-  })();
+    includePartials();
   </script>
 </body>
 </html>
