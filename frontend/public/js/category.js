@@ -1,3 +1,5 @@
+// frontend/public/js/category.js
+
 // Partials yükle
 window.addEventListener('DOMContentLoaded', () => {
   if (typeof includePartials === 'function') includePartials();
@@ -5,6 +7,23 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---------- Helpers ----------
+const API_BASE = (window.APP && window.APP.API_BASE) || '';
+
+async function json(url, opts = {}) {
+  const res = await fetch(url, {
+    credentials: 'include',
+    headers: { 'Accept': 'application/json' },
+    ...opts
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+// /api/categories/children/:slug  (API.getChildren yoksa yerel helper)
+async function getChildren(slug) {
+  return json(`${API_BASE}/api/categories/children/${encodeURIComponent(slug)}`);
+}
+
 const h = (s) => String(s ?? '').replace(/[&<>"'`]/g, m => (
   m === '&' ? '&amp;' :
   m === '<' ? '&lt;'  :
@@ -89,7 +108,18 @@ async function renderChildrenView({ slug, q, titleEl, chipsEl, catsEl, listingsE
   renderCategorySkeleton(catsEl, 10);
   renderProductSkeleton(listingsEl, 10);
 
-  const data = await API.getChildren(slug).catch(()=>null);
+  let data = null;
+  try {
+    // API.categories.getChildren varsa onu kullan; yoksa yerel helper
+    if (window.API && window.API.categories && window.API.categories.getChildren) {
+      data = await window.API.categories.getChildren(slug);
+    } else {
+      data = await getChildren(slug);
+    }
+  } catch {
+    data = null;
+  }
+
   if (data?.ok) {
     setText(titleEl, data.parent?.name ?? 'Kategori');
 
@@ -110,7 +140,11 @@ async function renderChildrenView({ slug, q, titleEl, chipsEl, catsEl, listingsE
     `).join('') : `<div class="muted center" style="grid-column:1/-1">Alt kategori yok.</div>`);
 
     // İlanlar
-    const res = await API.search({ cat: slug, q, limit: 20 }).catch(()=>null);
+    const res = await (window.API && window.API.listings
+      ? window.API.listings.search({ cat: slug, q, limit: 20 }).catch(()=>null)
+      : json(`${API_BASE}/api/listings/search?cat=${encodeURIComponent(slug)}&q=${encodeURIComponent(q)}&limit=20`).catch(()=>null)
+    );
+
     clearSkeleton(listingsEl);
     if (res?.ok && Array.isArray(res.listings) && res.listings.length){
       show(hListings, true);
@@ -145,7 +179,10 @@ async function renderMainCategories(catsEl, listingsEl, hListings, q=''){
 
   // Kategoriler
   try {
-    const mains = await API.getMainCategories();
+    const mains = await (window.API && window.API.categories
+      ? window.API.categories.getMain()
+      : json(`${API_BASE}/api/categories/main`)
+    );
     clearSkeleton(catsEl);
     setHTML(catsEl, mains?.ok && mains.categories?.length
       ? mains.categories.map(c=>`
@@ -164,7 +201,10 @@ async function renderMainCategories(catsEl, listingsEl, hListings, q=''){
   // Öne çıkan / arama
   try {
     const params = q ? { q, limit: 12 } : { cat: 'akilli-telefonlar', limit: 12 };
-    const res = await API.search(params);
+    const res = await (window.API && window.API.listings
+      ? window.API.listings.search(params)
+      : json(`${API_BASE}/api/listings/search?` + new URLSearchParams(params))
+    );
     clearSkeleton(listingsEl);
 
     if (res?.ok && res.listings?.length){

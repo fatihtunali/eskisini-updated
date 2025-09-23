@@ -1,17 +1,18 @@
 <!doctype html>
 <html lang="tr">
 <head>
-    <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-  rel="stylesheet">
+  <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
+    rel="stylesheet">
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Gizlilik & KVKK | Eskisini Ver Yenisini Al</title>
   <meta name="description" content="Eskisini Ver Yenisini Al gizlilik politikası ve KVKK aydınlatma metni." />
+
   <link rel="stylesheet" href="/css/styles.css" />
   <link rel="stylesheet" href="/css/fav.css" />
   <style>
@@ -24,11 +25,12 @@
     .tag{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--line,#e5e7eb);font-size:.8rem;margin-left:6px}
     .muted{color:#6b7280}
     .kbd{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f3f4f6;border:1px solid #e5e7eb;padding:0 .35rem;border-radius:6px}
+    .hero .container{max-width:1080px}
   </style>
 </head>
 <body>
   <!-- HEADER -->
-  <div data-include="partials/header.html"></div>
+  <div data-include="/partials/header.html"></div>
 
   <!-- HERO -->
   <section class="hero hero--bleed">
@@ -60,7 +62,7 @@
         <li><b>Hesap</b>: parola özetleri (hash), profil görseli, ayarlar</li>
         <li><b>İşlem</b>: ilanlar, favoriler, mesajlar, siparişler, ödeme kayıtları</li>
         <li><b>Konum</b>: şehir/ilçe (kullanıcının beyanı), IP tabanlı yaklaşık konum</li>
-        <li><b>Teknik</b>: cihaz/ tarayıcı bilgileri, çerez/SDK tanımlayıcıları, günlük kayıtları (log)</li>
+        <li><b>Teknik</b>: cihaz/tarayıcı bilgileri, çerez/SDK tanımlayıcıları, günlük kayıtları (log)</li>
         <li><b>Doğrulama</b>: KYC belgeleri ve görselleri (yalnızca doğrulama akışında)</li>
       </ul>
 
@@ -143,14 +145,15 @@
   </main>
 
   <!-- FOOTER -->
-  <div data-include="partials/footer.html"></div>
+  <div data-include="/partials/footer.html"></div>
 
   <!-- JS -->
   <script src="/js/partials.js"></script>
   <script src="/js/config.js"></script>
-  <script src="js/session.js"></script>
-  <script src="js/buy.js"></script>
-
+  <script src="/js/auth.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/session.js"></script>
+  <script src="/js/buy.js"></script>
   <script>
     if (typeof includePartials === 'function') includePartials();
   </script>
@@ -172,14 +175,16 @@
       "addressRegion":"İstanbul",
       "addressCountry":"TR"
     },
-    "contactPoint": [{
-      "@type": "ContactPoint",
-      "contactType": "customer support",
-      "email": "info@eskisiniveryenisinial.com",
-      "telephone": "+90 216 557 52 52",
-      "areaServed": "TR",
-      "availableLanguage": ["tr"]
-    }]
+    "contactPoint":[
+      {
+        "@type":"ContactPoint",
+        "contactType":"customer support",
+        "email":"info@eskisiniveryenisinial.com",
+        "telephone":"+90 216 557 52 52",
+        "areaServed":"TR",
+        "availableLanguage":["tr"]
+      }
+    ]
   }
   </script>
 </body>

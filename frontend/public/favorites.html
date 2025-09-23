@@ -2,11 +2,11 @@
 <html lang="tr">
 <head>
   <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-  rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
+    rel="stylesheet">
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -27,12 +27,12 @@
   <!-- JS (doğru sıra) -->
   <script src="js/partials.js"></script>
   <script src="js/config.js"></script>
-  <script src="js/ui.js"></script>     <!-- opsiyonel ama faydalı -->
+  <script src="js/ui.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/header.js"></script>
   <script src="js/session.js"></script>
+  <script src="js/fav.js"></script>   <!-- kalp/toggle için gerekli -->
   <script src="js/buy.js"></script>
-
 
   <script>
   (function(){
@@ -46,12 +46,55 @@
       location.href = u.toString();
     }
 
+    const fmtPrice = (minor, cur='TRY') =>
+      `${((Number(minor)||0)/100).toLocaleString('tr-TR',{maximumFractionDigits:2})} ${esc(cur)}`;
+
+    function cardHTML(x){
+      const href = x.slug
+        ? `/listing.html?slug=${encodeURIComponent(x.slug)}`
+        : `/listing.html?id=${encodeURIComponent(x.listing_id)}`;
+      const img  = x.thumb_url || x.cover || '/assets/placeholder.png';
+      const hasPrice = typeof x.price_minor === 'number';
+      const priceStr = hasPrice ? fmtPrice(x.price_minor, x.currency||'TRY') : '';
+
+      // fav-count varsa gösterelim; yoksa 0
+      const favCount = Number.isFinite(x.favorites_count) ? x.favorites_count : 0;
+      const favBtn   = (window.FAV && x.listing_id)
+        ? FAV.favButtonHTML(x.listing_id, true)  // favorilerde zaten aktif
+        : '';
+
+      return `
+        <article class="card product-card" data-listing-id="${x.listing_id}">
+          <div class="media">
+            <a class="thumb" href="${href}">
+              <img loading="lazy" src="${img}" alt="${esc(x.title||'')}"
+                   onerror="this.src='/assets/placeholder.png';this.onerror=null">
+            </a>
+          </div>
+          <div class="pad">
+            <h3 class="p-title"><a href="${href}">${esc(x.title||'')}</a></h3>
+            ${priceStr ? `<div class="p-price">${priceStr}</div>` : ''}
+            <div class="actions" style="display:flex;align-items:center;gap:10px;margin-top:8px">
+              <a class="btn" href="${href}">Görüntüle</a>
+              <!-- Kalp butonu + sayaç -->
+              <span class="fav-count">${favCount}</span>
+              ${favBtn}
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
     async function load(){
       const root = $('#favlist');
       root.innerHTML = '<div class="pad">Yükleniyor…</div>';
 
       try{
-        const res = await fetch(`${API}/api/favorites/my`, { credentials:'include', headers:{'Accept':'application/json'} });
+        const res = await fetch(`${API}/api/favorites/my`, {
+          credentials:'include',
+          headers:{'Accept':'application/json','Cache-Control':'no-store'},
+          cache:'no-store'
+        });
         if (res.status === 401) { redirectToLogin(); return; }
         if (!res.ok) throw new Error('HTTP '+res.status);
 
@@ -63,25 +106,11 @@
           return;
         }
 
-        root.innerHTML = items.map(x=>{
-          const img = x.thumb_url || '/assets/placeholder.png';
-          const href = x.slug
-            ? `/listing.html?slug=${encodeURIComponent(x.slug)}`
-            : `/listing.html?id=${encodeURIComponent(x.listing_id)}`;
-          const priceStr = typeof x.price_minor === 'number'
-            ? `${(x.price_minor/100).toLocaleString('tr-TR',{maximumFractionDigits:2})} ${esc(x.currency||'TRY')}`
-            : '';
+        root.innerHTML = items.map(cardHTML).join('');
 
-          return `
-            <article class="card">
-              <img src="${img}" alt="">
-              <div class="pad">
-                <h3>${esc(x.title||'')}</h3>
-                ${priceStr ? `<div class="price">${priceStr}</div>` : ''}
-                <a class="btn" href="${href}">Görüntüle</a>
-              </div>
-            </article>`;
-        }).join('');
+        // Favori kalp butonlarını hydrate et (toggle ile listeden çıkarabilsin)
+        if (window.FAV) await FAV.wireFavButtons(root);
+
       } catch (err) {
         console.error(err);
         $('#favlist').innerHTML = '<div class="pad error">Favoriler alınamadı.</div>';

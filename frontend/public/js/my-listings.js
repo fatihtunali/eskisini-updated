@@ -1,7 +1,6 @@
+// public/js/my-listings.js
 console.log('[MY-LISTINGS] script loaded');
 
-
-// public/js/my-listings.js
 (function () {
   const API_BASE = (window.APP && window.APP.API_BASE) || '';
   const $ = (s, r = document) => r.querySelector(s);
@@ -129,8 +128,6 @@ console.log('[MY-LISTINGS] script loaded');
     wirePager();
     load();
   }
-
-  
 
   // Works with partials
   document.addEventListener('partials:loaded', boot);

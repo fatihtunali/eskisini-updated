@@ -1,13 +1,16 @@
 <!doctype html>
 <html lang="tr">
 <head>
-  <!-- Google Fonts: Inter -->
+  <!-- Google Fonts: Inter (latin-ext) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
 
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Eskisini ver, yenisini al! Türkiye'nin güvenilir ikinci el & takas platformu. Kategoriye göre ara, filtrele, satın al.">
   <title>Eskisini Ver Yenisini Al</title>
+
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/fav.css">
   <style>
@@ -33,7 +36,7 @@
   <div data-include="partials/header.html"></div>
 
   <!-- HERO -->
-  <section class="hero hero--bleed">
+  <section class="hero hero--bleed" aria-label="Tanıtım">
     <div class="hero-content container">
       <h1><span class="accent">Eskisini Ver</span> Yenisini Al</h1>
       <p>Türkiye'nin en güvenilir alışveriş platformu</p>
@@ -44,11 +47,11 @@
   <main class="container section home-layout">
 
     <!-- SOL: Arama & Kategoriler -->
-    <aside class="panel filters">
+    <aside class="panel filters" aria-label="Detaylı arama ve kategori seçimi">
       <h3>Detaylı Arama</h3>
       <label class="field">
         <span>Ara</span>
-        <input type="search" id="f_q" placeholder="Anahtar kelime">
+        <input type="search" id="f_q" placeholder="Anahtar kelime" autocomplete="off" inputmode="search">
       </label>
 
       <label class="field">
@@ -61,11 +64,11 @@
       <div class="grid two" style="gap:8px">
         <label class="field">
           <span>Min ₺</span>
-          <input id="f_min" type="number" min="0" step="1" placeholder="0">
+          <input id="f_min" type="number" min="0" step="1" placeholder="0" inputmode="numeric">
         </label>
         <label class="field">
           <span>Maks ₺</span>
-          <input id="f_max" type="number" min="0" step="1" placeholder="100000">
+          <input id="f_max" type="number" min="0" step="1" placeholder="100000" inputmode="numeric">
         </label>
       </div>
 
@@ -78,14 +81,14 @@
 
       <button class="btn primary" id="apply" type="button">Uygula</button>
 
-      <hr style="border:none;border-top:1px solid #e5e7eb;margin:14px 0">
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:14px 0" aria-hidden="true">
 
       <h3>Kategoriler</h3>
-      <ul id="catList" class="catlist"></ul>
+      <ul id="catList" class="catlist" aria-label="Ana kategoriler"></ul>
     </aside>
 
     <!-- SAĞ: Öne çıkanlar / sonuçlar -->
-    <section>
+    <section aria-label="Ürünler">
       <div class="toolbar">
         <h2 id="hFeatured" style="margin:0">Öne Çıkanlar</h2>
         <div>
@@ -99,7 +102,7 @@
         </div>
       </div>
 
-      <div id="featured" class="grid five"></div>
+      <div id="featured" class="grid five" aria-live="polite"></div>
       <div id="pager" hidden></div>
     </section>
 
@@ -116,11 +119,13 @@
 <script src="js/auth.js"></script>
 <script src="js/session.js"></script>
 <script src="js/header.js"></script>
-<script src="js/cities-tr.js"></script>
 <script src="js/home.js"></script>
 <script src="js/buy.js"></script>
 
-<script>includePartials();</script>
+  <script>
+    // Partials yükle (header/footer için)
+    if (typeof includePartials === 'function') includePartials();
+  </script>
 
 </body>
 </html>

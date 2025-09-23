@@ -6,11 +6,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
 
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Hesabım</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
+  <!-- HEADER -->
   <div data-include="partials/header.html"></div>
 
   <main class="container section">
@@ -22,11 +24,12 @@
         <a href="?tab=mylistings" data-tab="mylistings">İlanlarım</a>
       </nav>
 
-      <!-- profile.js buraya render ediyor -->
+      <!-- profile.js buraya render eder -->
       <div id="tab_content"></div>
     </section>
   </main>
 
+  <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>
 
   <!-- JS sırası -->
@@ -38,7 +41,9 @@
 <script src="/js/header.js"></script>
 
 <!-- sayfaya özel -->
-<script src="/js/profile.js"></script>
+<script src="/js/messages.js"></script>   <!-- gerekiyorsa -->
+<script src="/js/profile.js"></script>    <!-- gerekiyorsa -->
+<script src="/js/listing.js"></script>    <!-- gerekiyorsa -->
 
 <script>includePartials();</script>
 </body>

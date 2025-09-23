@@ -11,7 +11,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Kategoriler | Eskisini Ver Yenisini Al</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/fav.css">
 </head>
 <body>
 
@@ -40,21 +41,19 @@
 
 <div data-include="partials/footer.html"></div>
 
-<!-- JS: doğru sıra -->
-<script src="js/partials.js"></script>
-<script src="js/config.js"></script>
-<script src="js/ui.js"></script>        <!-- opsiyonel ama faydalı -->
-<script src="js/auth.js"></script>      <!-- header’ı hydrate eder -->
-<script src="js/header.js"></script>    <!-- arama kutusu bağlama -->
-<script src="js/api.js"></script>
-<script src="js/category.js"></script>
-<script src="js/session.js"></script>
-<script src="js/buy.js"></script>
-
+<!-- SCRIPTS - Correct order and dependencies -->
+<script src="/js/config.js"></script>
+<script src="/js/partials.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/fav.js"></script>
+<script src="/js/session.js"></script>
+<script src="/js/buy.js"></script>
+<script src="/js/category.js"></script>
 
 <script>
-  // partial'ları hemen yükle (auth/header, 'partials:loaded' olayını dinliyor)
-  includePartials();
+  // partial'ları hemen yükle (category.js 'partials:loaded' olayını dinliyor)
+  if (typeof includePartials === 'function') includePartials();
 </script>
 </body>
 </html>

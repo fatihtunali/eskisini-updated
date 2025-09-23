@@ -9,6 +9,7 @@ function toPerksArray(perks, fallback = []) {
   if (Array.isArray(perks)) return perks;
   if (perks == null) return fallback;
   if (typeof perks === 'string') {
+    // JSON gibi görünüyorsa parse etmeyi dene
     const s = perks.trim();
     if ((s.startsWith('[') && s.endsWith(']')) || (s.startsWith('"') && s.endsWith('"'))) {
       try {
@@ -69,7 +70,7 @@ r.get('/plans', async (_req, res) => {
     res.json({ ok: true, plans });
   } catch (e) {
     console.error('GET /billing/plans error =>', e);
-    res.status(500).json({ ok: false, error: 'server_error', plans: [] });
+    res.json({ ok: true, plans: [] });
   }
 });
 
@@ -91,30 +92,33 @@ r.get('/me', authRequired, async (req, res) => {
     );
 
     if (!rows.length) {
-      let fallbackPlan = buildFreeFallback();
-      try {
-        const [[freePlan]] = await pool.query(
-          `SELECT code, name, price_minor, currency, period,
-                  listing_quota_month, bump_credits_month, featured_credits_month,
-                  support_level, perks
-             FROM subscription_plans
-            WHERE code='free' LIMIT 1`
-        );
-        if (freePlan) {
-          fallbackPlan = {
-            ...freePlan,
-            perks: toPerksArray(freePlan.perks, [
-              `Aylik ilan hakki: ${freePlan.listing_quota_month}`,
-              `Yukseltme kredisi: ${freePlan.bump_credits_month}`,
-              `One cikarma kredisi: ${freePlan.featured_credits_month}`,
-              `Destek: ${freePlan.support_level}`
-            ])
-          };
-        }
-      } catch {
-        // keep default fallback if lookup fails
-      }
-      return res.json({ ok: true, subscription: null, effective_plan: fallbackPlan });
+      const [[freePlan]] = await pool.query(
+        `SELECT code, name, price_minor, currency, period,
+                listing_quota_month, bump_credits_month, featured_credits_month,
+                support_level, perks
+           FROM subscription_plans
+          WHERE code='free' LIMIT 1`
+      );
+      const effective = freePlan ? {
+        ...freePlan,
+        perks: toPerksArray(freePlan.perks, [
+          `Aylık ilan hakkı: ${freePlan.listing_quota_month}`,
+          `Yükseltme kredisi: ${freePlan.bump_credits_month}`,
+          `Öne çıkarma kredisi: ${freePlan.featured_credits_month}`,
+          `Destek: ${freePlan.support_level}`
+        ])
+      } : {
+        code: 'free', name: 'Ücretsiz', price_minor: 0, currency: 'TRY', period: 'monthly',
+        listing_quota_month: Number(process.env.FREE_LISTING_QUOTA || 5),
+        bump_credits_month: 0, featured_credits_month: 0, support_level: 'none',
+        perks: [
+          `Aylık ilan hakkı: ${Number(process.env.FREE_LISTING_QUOTA || 5)}`,
+          `Yükseltme kredisi: 0`,
+          `Öne çıkarma kredisi: 0`,
+          `Destek: none`
+        ]
+      };
+      return res.json({ ok: true, subscription: null, effective_plan: effective });
     }
 
     const sub = rows[0];
@@ -149,10 +153,8 @@ r.get('/me', authRequired, async (req, res) => {
     });
   } catch (e) {
     console.error('GET /billing/me error =>', e);
-    const fallbackPlan = buildFreeFallback();
-    res.status(500).json({
-      ok: false,
-      error: 'server_error',
+    res.status(200).json({
+      ok: true,
       subscription: null,
       effective_plan: fallbackPlan
     });

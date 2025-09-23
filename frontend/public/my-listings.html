@@ -6,9 +6,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
 
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>İlanlarım</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>İlanlarım | Eskisini Ver Yenisini Al</title>
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Hafif pager stili; styles.css yoksa hoş gözüksün */
+    .pager{display:flex;gap:12px;align-items:center;justify-content:center;margin:18px 0}
+    .pager button{border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .pager button[disabled]{opacity:.5;cursor:not-allowed}
+  </style>
 </head>
 <body>
   <div data-include="partials/header.html"></div>
@@ -17,12 +24,12 @@
     <h1>İlanlarım</h1>
 
     <!-- JS dolduracak -->
-    <div id="listings" class="grid three"></div>
+    <div id="listings" class="grid three" aria-live="polite"></div>
 
-    <div class="pager">
-      <button id="prev">‹ Önceki</button>
-      <span id="pinfo"></span>
-      <button id="next">Sonraki ›</button>
+    <div class="pager" role="navigation" aria-label="Sayfalama">
+      <button id="prev" type="button" aria-label="Önceki sayfa">‹ Önceki</button>
+      <span id="pinfo" class="muted" aria-live="polite"></span>
+      <button id="next" type="button" aria-label="Sonraki sayfa">Sonraki ›</button>
     </div>
   </main>
 

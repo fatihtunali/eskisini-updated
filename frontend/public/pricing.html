@@ -1,14 +1,33 @@
-<!doctype html><html lang="tr"><head>
-    <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-  rel="stylesheet">
+<!doctype html>
+<html lang="tr">
+<head>
+  <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
+    rel="stylesheet">
 
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Fiyatlandırma | Eskisini</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Fiyatlandırma | Eskisini Ver Yenisini Al</title>
   <link rel="stylesheet" href="/css/styles.css">
+
+  <style>
+    /* Basit fiyat kartları */
+    .grid.pricing { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+    .pricecard{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;display:flex;flex-direction:column}
+    .pricecard h3{margin:6px 0 4px;font-size:1.15rem}
+    .price{font-size:1.6rem;font-weight:800;margin:6px 0 10px}
+    .price .period{font-size:.9rem;font-weight:600;color:#6b7280}
+    .plist{list-style:none;padding:0;margin:10px 0;display:grid;gap:6px}
+    .plist li{background:#f9fafb;border:1px dashed #e5e7eb;border-radius:10px;padding:8px 10px}
+    .pricecard .btn{margin-top:10px}
+    .price-free{border-color:#c7f9cc}
+    .price-pro{border-color:#a5b4fc}
+    .price-business{border-color:#fcd34d}
+    .sub.center{color:#6b7280}
+  </style>
 </head>
 
 <body>
@@ -17,48 +36,96 @@
   <main class="container section">
     <h1 class="center">Basit ve Şeffaf Fiyatlandırma</h1>
     <p class="sub center">İhtiyacınıza uygun paketi seçin.</p>
-    <div id="plans" class="grid pricing"></div>
+    <div id="plans" class="grid pricing" aria-live="polite"></div>
   </main>
 
+  <div data-include="/partials/footer.html"></div>
+
+  <!-- JS yükleme sırası -->
   <script src="/js/partials.js"></script>
-  <script src="/js/config.js"></script> 
-     <script src="/js/api.js"></script>
-     <script src="js/session.js"></script>
-     <script src="js/buy.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/session.js"></script>
+  <script src="/js/header.js"></script>
 
   <script>
-  (async function(){
-    await includePartials();
-    const { plans } = await API.getPlans();
-    const wrap = document.getElementById('plans');
-    const money = (m,c='TRY') => new Intl.NumberFormat('tr-TR',{style:'currency',currency:c}).format(m/100);
+  (async function () {
+    // partials (header/footer) yükle
+    if (typeof includePartials === 'function') await includePartials();
 
-    wrap.innerHTML = plans.map(p => `
-      <article class="pricecard ${p.code==='pro_m'?'price-pro': p.code==='biz_m'?'price-business':'price-free'}">
-        <h3>${p.name}</h3>
-        <div class="price">${money(p.price_minor,p.currency)} <span class="period">/${p.period==='monthly'?'ay':'yıl'}</span></div>
-        <ul class="plist">
-          <li>Aylık ilan hakkı: <b>${p.listing_quota_month===9999?'Sınırsız':p.listing_quota_month}</b></li>
-          <li>Bump: <b>${p.bump_credits_month}</b></li>
-          <li>Featured: <b>${p.featured_credits_month}</b></li>
-          <li>Destek: <b>${p.support_level}</b></li>
-          ${p.perks?`<li>${p.perks}</li>`:''}
-        </ul>
-        <button class="btn primary" data-plan="${p.code}">${p.price_minor? 'Satın Al' : 'Seç'}</button>
-      </article>
-    `).join('');
+    const API_BASE = (window.APP && window.APP.API_BASE) || '';
+    const $ = (s,r=document)=>r.querySelector(s);
+    const money = (m,c='TRY') => new Intl.NumberFormat('tr-TR',{style:'currency',currency:c}).format((Number(m)||0)/100);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 
-    wrap.addEventListener('click', async (e)=>{
-      const btn = e.target.closest('button[data-plan]');
-      if(!btn) return;
-      try{
-        await API.subscribe(btn.dataset.plan);
-        alert('Paketiniz aktif edildi!');
-        location.href='/my-listings.html';
-      }catch(err){
-        alert(err.payload?.error || err.message);
+    async function getPlans(){
+      const r = await fetch(`${API_BASE}/api/billing/plans`, { headers:{'Accept':'application/json'}, credentials:'include' });
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    }
+
+    // Not: Backend’de satın alma/abonelik başlatma endpoint’i yok.
+    // Bu yüzden şimdilik butonlar bilgi amaçlı / profil yönlendirmeli.
+    function handleChoose(code){
+      if (code === 'free') {
+        alert('Ücretsiz plan zaten aktiftir. Profilinize yönlendiriliyoruz.');
+        location.href = '/profile.html';
+      } else {
+        alert('Paket satın alma / yükseltme akışı yakında eklenecek.');
       }
-    });
+    }
+
+    const wrap = $('#plans');
+    wrap.innerHTML = `<div class="pad">Yükleniyor…</div>`;
+
+    try{
+      const data = await getPlans();
+      const plans = (data && data.plans) ? data.plans : [];
+
+      if (!plans.length){
+        wrap.innerHTML = `<div class="pad error">Planlar yüklenemedi.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = plans.map(p => {
+        // perks backend’de dizi olarak geliyor — liste halinde render edelim
+        const perks = Array.isArray(p.perks) ? p.perks : (p.perks ? [p.perks] : []);
+        const period = p.period === 'monthly' ? 'ay' : (p.period === 'yearly' ? 'yıl' : p.period || '');
+        const css =
+          p.code?.includes('pro')  ? 'price-pro' :
+          p.code?.includes('biz')  ? 'price-business' :
+                                     'price-free';
+
+        return `
+          <article class="pricecard ${css}">
+            <h3>${esc(p.name || p.code || 'Plan')}</h3>
+            <div class="price">
+              ${money(p.price_minor, p.currency || 'TRY')}
+              ${period ? `<span class="period">/${esc(period)}</span>` : ``}
+            </div>
+            <ul class="plist">
+              <li>Aylık ilan hakkı: <b>${p.listing_quota_month===9999?'Sınırsız':esc(p.listing_quota_month)}</b></li>
+              <li>Yükseltme (bump): <b>${esc(p.bump_credits_month)}</b></li>
+              <li>Öne çıkarma: <b>${esc(p.featured_credits_month)}</b></li>
+              <li>Destek: <b>${esc(p.support_level || 'none')}</b></li>
+              ${perks.map(x=>`<li>${esc(x)}</li>`).join('')}
+            </ul>
+            <button class="btn primary" data-plan="${esc(p.code)}">
+              ${Number(p.price_minor) ? 'Seç' : 'Ücretsiz seç'}
+            </button>
+          </article>
+        `;
+      }).join('');
+
+      wrap.addEventListener('click', (e)=>{
+        const btn = e.target.closest('button[data-plan]');
+        if (!btn) return;
+        handleChoose(btn.dataset.plan);
+      });
+    }catch(err){
+      console.error(err);
+      wrap.innerHTML = `<div class="pad error">Planlar yüklenemedi.</div>`;
+    }
   })();
   </script>
-</body></html>
+</body>
+</html>

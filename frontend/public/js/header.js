@@ -45,12 +45,9 @@
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const q = (qInput?.value || '').trim();
-
-      const u = new URL(location.href);
-      u.pathname = '/index.html';
-      updateParam(u.searchParams, 'q', q);
-      u.searchParams.delete('page');
+      const q = (document.getElementById('q')?.value || '').trim();
+      const u = new URL('/search.html', location.origin);
+      if (q) u.searchParams.set('q', q);
       location.href = u.toString();
     });
   }
@@ -66,65 +63,59 @@
     const navName  = document.getElementById('navName');
     const navKyc   = document.getElementById('navKyc');
     const btnLogout= document.getElementById('btnLogout');
+    
     const bar = document.querySelector('.topbar');
     const me = await whoami();
 
-    if (!me){
-      bar?.classList.remove('auth');
-      if (guestNav) guestNav.hidden = false;
-      if (userNav)  userNav.hidden  = true;
-      return;
-    }
+if (!me){
+  bar?.classList.remove('auth');
+  // misafir
+  if (guestNav) guestNav.hidden = false;
+  if (userNav)  userNav.hidden  = true;
+  return;
+}
 
-    bar?.classList.add('auth');
-    if (guestNav) guestNav.hidden = true;
-    if (userNav)  userNav.hidden  = false;
+// oturum açık
+bar?.classList.add('auth');
+if (guestNav) guestNav.hidden = true;
+if (userNav)  userNav.hidden  = false;
 
-    if (navName) navName.textContent = (me.full_name || me.email || '').split(' ')[0] || 'Hesabım';
-    if (navKyc){
-      const ks = String(me.kyc_status || 'none').toLowerCase();
-      navKyc.classList.remove('pending','verified','rejected','none');
-      navKyc.classList.add(ks);
-      navKyc.title = `KYC: ${ks}`;
-    }
+if (navName) navName.textContent = me.full_name || me.email || 'Hesabım';
+if (navKyc){
+  const ks = String(me.kyc_status || 'none').toLowerCase();
+  navKyc.classList.remove('pending','verified','rejected','none');
+  navKyc.classList.add(ks);
+  navKyc.title = `KYC: ${ks}`;
+}
 
-    const toggle = document.getElementById('userToggle');
-    const userNavEl = document.getElementById('userNav');
-    if (toggle && userNavEl){
-      function closeMenu(){
-        userNavEl.classList.remove('open');
-        toggle.setAttribute('aria-expanded','false');
-      }
-      function openMenu(){
-        userNavEl.classList.add('open');
-        toggle.setAttribute('aria-expanded','true');
-      }
-      toggle.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        const isOpen = userNavEl.classList.contains('open');
-        isOpen ? closeMenu() : openMenu();
-      });
-      document.addEventListener('click', (e)=>{
-        if (!userNavEl.contains(e.target)) closeMenu();
-      });
-      document.addEventListener('keydown', (e)=>{
-        if (e.key === 'Escape') closeMenu();
-      });
-    }
-
-    btnLogout?.addEventListener('click', async (e)=>{
-      e.preventDefault();
-      try {
-        await fetch(`${API}/api/auth/logout`, { method:'POST', credentials:'include' });
-      } catch {}
-      location.href = '/';
-    }, { once:true });
+// toggle dropdown
+const toggle = document.getElementById('userToggle');
+const userNavEl = document.getElementById('userNav');
+if (toggle && userNavEl){
+  function closeMenu(){
+    userNavEl.classList.remove('open');
+    toggle.setAttribute('aria-expanded','false');
   }
+  function openMenu(){
+    userNavEl.classList.add('open');
+    toggle.setAttribute('aria-expanded','true');
+  }
+  toggle.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const isOpen = userNavEl.classList.contains('open');
+    isOpen ? closeMenu() : openMenu();
+  });
+  // dışarı tık / ESC kapat
+  document.addEventListener('click', (e)=>{
+    if (!userNavEl.contains(e.target)) closeMenu();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape') closeMenu();
+  });
+}
 
-  const runBoot = () => {
-    bootHeader().catch(err => console.error('[header] init failed', err));
-  };
 
+  // Yalnız bir tetikleyici: partials varsa onu, yoksa DOMContentLoaded
   if (window.includePartials) {
     document.addEventListener('partials:loaded', runBoot, { once:true });
   } else {

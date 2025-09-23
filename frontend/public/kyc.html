@@ -2,36 +2,66 @@
 <html lang="tr">
 <head>
   <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
-  rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext"
+    rel="stylesheet">
 
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>KYC</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Hesabını KYC ile doğrula. TC Kimlik No format kontrolü yapılır; gerçek doğrulama süreçleri daha sonra eklenecek.">
+  <title>KYC Doğrulama | Eskisini Ver Yenisini Al</title>
+
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Küçük görsel ayrımlar */
+    .kyc-status.badge { display:inline-block; padding:4px 8px; border-radius:999px; font-size:.85rem; border:1px solid #e5e7eb; }
+    .kyc-status.pending { background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
+    .kyc-status.verified{ background:#ecfdf5; color:#065f46; border-color:#a7f3d0; }
+    .kyc-status.rejected{ background:#fef2f2; color:#991b1b; border-color:#fecaca; }
+    .kyc-status.none    { background:#f9fafb; color:#374151; border-color:#e5e7eb; }
+    .form .form-error { margin:8px 0;color:#b91c1c;background:#fee2e2;border:1px solid #fecaca;padding:8px;border-radius:8px; }
+  </style>
 </head>
 <body>
+  <!-- HEADER -->
   <div data-include="partials/header.html"></div>
 
   <main class="container section">
     <h1>KYC Doğrulama</h1>
-    <div id="status" class="muted">Durum: —</div>
 
-    <form id="f" class="form card pad" novalidate>
+    <p class="muted" id="statusWrap">
+      Durum:
+      <span id="status" class="kyc-status badge none" aria-live="polite">—</span>
+    </p>
+
+    <form id="f" class="form card pad" novalidate aria-describedby="hint">
+      <div class="form-error" id="formErr" role="alert" hidden></div>
+
       <label class="field">
         <span>TC Kimlik No (11 hane)</span>
-        <input name="tc_no" required pattern="\d{11}" inputmode="numeric" placeholder="Sadece rakam">
-        <small class="hint">Sadece format kontrolü yapılır; gerçek doğrulama daha sonra eklenecek.</small>
+        <input
+          name="tc_no"
+          required
+          inputmode="numeric"
+          autocomplete="off"
+          aria-describedby="hint"
+          placeholder="Sadece rakam"
+          pattern="^\d{11}$">
+        <small id="hint" class="hint">
+          Şu an yalnızca format (11 hane) kontrol edilir; gerçek doğrulama süreçleri daha sonra eklenecektir.
+        </small>
       </label>
+
       <div style="display:flex; gap:8px; align-items:center">
-        <button class="btn primary" type="submit">Gönder</button>
-        <span id="msg" class="muted"></span>
+        <button class="btn primary" type="submit" id="btnSend">Gönder</button>
+        <span id="msg" class="muted" aria-live="polite"></span>
       </div>
     </form>
   </main>
 
+  <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>
 
   <!-- JS: doğru sıra -->
@@ -41,14 +71,12 @@
   <script src="js/header.js"></script>
   <script src="js/session.js"></script>
   <script src="js/buy.js"></script>
-  <script src="js/buy.js"></script>
-
 
   <script>
   (function(){
     const API = (window.APP && window.APP.API_BASE) || '';
-    const $ = (s,r=document)=>r.querySelector(s);
-    const esc = s => String(s??'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+    const $   = (s,r=document)=>r.querySelector(s);
+    const err = (el, msg) => { if(!el) return; el.textContent = msg||''; el.hidden = !msg; };
 
     function redirectToLogin(){
       const u = new URL('/login.html', location.origin);
@@ -56,39 +84,51 @@
       location.href = u.toString();
     }
 
+    function applyStatusBadge(el, status){
+      const s = String(status||'none').toLowerCase();
+      el.className = 'kyc-status badge ' + (['pending','verified','rejected','none'].includes(s) ? s : 'none');
+      el.textContent = s;
+      el.title = 'KYC: ' + s;
+    }
+
     async function me(){
-      const r = await fetch(`${API}/api/auth/me`, { credentials:'include', headers:{'Accept':'application/json'} });
+      const r = await fetch(`${API}/api/auth/me`, {
+        credentials:'include', headers:{'Accept':'application/json','Cache-Control':'no-store'}, cache:'no-store'
+      });
       if (r.status === 401) return null;
       if (!r.ok) throw new Error('HTTP '+r.status);
       const data = await r.json(); return data.user || data;
     }
 
     async function loadStatus(){
-      const s = $('#status');
-      s.textContent = 'Durum: yükleniyor…';
+      const sEl = $('#status');
+      sEl.textContent = 'yükleniyor…';
       const user = await me();
       if (!user) { redirectToLogin(); return; }
-      s.textContent = 'Durum: ' + (user.kyc_status || 'none');
+      applyStatusBadge(sEl, user.kyc_status || 'none');
     }
 
     function digitsOnly(e){
-      // input'a sadece rakam yazdır (kullanıcı deneyimi)
-      const tgt = e.target;
-      const v = tgt.value.replace(/\D/g,'');
-      if (tgt.value !== v) tgt.value = v;
+      const t = e.target;
+      const v = t.value.replace(/\D/g,'');
+      if (t.value !== v) t.value = v;
     }
 
     async function submitKYC(e){
       e.preventDefault();
       const form = e.currentTarget;
-      const msg = $('#msg'); msg.textContent = '';
-      const btn = form.querySelector('[type="submit"]');
+      const msg  = $('#msg');
+      const fErr = $('#formErr');
+      const btn  = $('#btnSend');
+
+      err(fErr, ''); msg.textContent = '';
       btn.disabled = true;
 
       const fd = new FormData(form);
       const tc = String(fd.get('tc_no')||'').replace(/\D/g,'');
-      if (tc.length !== 11) {
-        msg.textContent = 'TC 11 hane olmalı.';
+
+      if (tc.length !== 11){
+        err(fErr, 'TC Kimlik No 11 hane olmalı.');
         btn.disabled = false; return;
       }
 
@@ -96,23 +136,25 @@
         const r = await fetch(`${API}/api/auth/kyc`, {
           method:'POST',
           credentials:'include',
-          headers:{'Content-Type':'application/json','Accept':'application/json'},
+          headers:{'Content-Type':'application/json','Accept':'application/json','Cache-Control':'no-store'},
+          cache:'no-store',
           body: JSON.stringify({ tc_no: tc })
         });
         if (r.status === 401) { redirectToLogin(); return; }
         const data = await r.json().catch(()=>({}));
         if (!r.ok || data.ok===false){
-          msg.textContent = data.reason || data.error || 'Kaydedilemedi';
+          err(fErr, data.reason || data.error || 'Kaydedilemedi.');
           btn.disabled = false; return;
         }
+
         msg.textContent = 'Gönderildi ✓ (durum: ' + (data.kyc_status || 'pending') + ')';
-        // Header’daki KYC rozeti yenilensin
+        // Header rozetini yenile
         document.dispatchEvent(new Event('auth:login'));
-        // Mevcut sayfadaki durum metnini de güncelle
+        // Statü alanını güncelle
         await loadStatus();
-      } catch(err){
-        msg.textContent = 'Ağ hatası, tekrar deneyin.';
-      } finally {
+      }catch(ex){
+        err(fErr, 'Ağ hatası. Lütfen tekrar deneyin.');
+      }finally{
         btn.disabled = false;
       }
     }
