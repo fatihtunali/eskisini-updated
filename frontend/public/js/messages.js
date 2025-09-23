@@ -11,9 +11,10 @@
   let currentUser = null;
   let currentThreadId = null;
   let pollTimer = null;
+  let threadInfo = null;
 
   function escapeHTML(s){ return (s??'').toString().replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
-  function toLogin(){ location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search); }
+  function toLogin(){ location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname + location.search); }
 
   async function whoami(){
     try{
@@ -82,11 +83,31 @@
       if (!r.ok) throw 0;
       const data = await r.json();
 
+      threadInfo = data.conversation || threadInfo;
+
       box.innerHTML = (data.messages || []).map(m=>{
         const mine = !!(currentUser && m.sender_id === currentUser.id);
         const time = m.created_at ? new Date(m.created_at).toLocaleString('tr-TR') : '';
+        const info = threadInfo || {};
+        const buyerName = info.buyer_name || 'Alıcı';
+        const sellerName = info.seller_name || 'Satıcı';
+        const senderRole = info
+          ? (m.sender_id === info.seller_id ? 'Satıcı' : m.sender_id === info.buyer_id ? 'Alıcı' : 'Kullanıcı')
+          : 'Kullanıcı';
+        let senderLabel;
+        if (mine) {
+          if (senderRole === 'Satıcı') senderLabel = 'Siz · Satıcı';
+          else if (senderRole === 'Alıcı') senderLabel = 'Siz · Alıcı';
+          else senderLabel = 'Siz';
+        } else {
+          if (senderRole === 'Satıcı') senderLabel = `Satıcı · ${sellerName}`;
+          else if (senderRole === 'Alıcı') senderLabel = `Alıcı · ${buyerName}`;
+          else senderLabel = `Kullanıcı · #${m.sender_id ?? '-'}`;
+        }
+
         return `<div class="bubble ${mine?'me':''}">
-          ${escapeHTML(m.body || '')}
+          <div class="bubble-head">${senderLabel}</div>
+          <div class="bubble-body">${escapeHTML(m.body || '')}</div>
           <span class="time">${time}</span>
         </div>`;
       }).join('') || '<div class="pad muted">Henüz mesaj yok.</div>';

@@ -134,7 +134,7 @@
         body: JSON.stringify({ listing_id: listingId })
       });
       if (r.status === 401) {
-        location.href = `/login.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+        location.href = `/login.html?redirect=${encodeURIComponent(location.pathname + location.search)}`;
         return null;
       }
       const d = await r.json();
@@ -178,7 +178,7 @@
   if (!slug) { location.href = '/'; return; }
 
   function toLogin() {
-    location.href = `/login.html?next=${encodeURIComponent(location.pathname + location.search)}`;
+    location.href = `/login.html?redirect=${encodeURIComponent(location.pathname + location.search)}`;
   }
 
   async function startConversation(listingId){

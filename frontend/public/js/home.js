@@ -92,6 +92,33 @@ function productCard(x){
   `;
 }
 
+
+function populateCitySelect(selected){
+  const sel = document.getElementById('f_city');
+  if (!sel) return;
+
+  if (sel.dataset.bound === '1') {
+    if (selected != null) sel.value = selected;
+    return;
+  }
+
+  const cities = Array.isArray(window.CITIES_TR) ? window.CITIES_TR : [];
+  sel.innerHTML = '';
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = 'Tüm şehirler';
+  sel.appendChild(defaultOpt);
+
+  cities.forEach(city => {
+    const opt = document.createElement('option');
+    opt.value = city;
+    opt.textContent = city;
+    sel.appendChild(opt);
+  });
+
+  sel.value = selected || '';
+  sel.dataset.bound = '1';
+}
 function categoryListItem(c){
   return `<li><a href="index.html?cat=${encodeURIComponent(c.slug)}" data-cat-link="${h(c.slug)}">${h(c.name)}</a></li>`;
 }
@@ -106,8 +133,9 @@ function wireFiltersApply(){
     const cat = (document.getElementById('f_cat')?.value || p.cat || '');
     const min = document.getElementById('f_min')?.value || '';
     const max = document.getElementById('f_max')?.value || '';
+    const city = (document.getElementById('f_city')?.value || p.city || '').trim();
     const sort= document.getElementById('f_sort')?.value || 'newest';
-    setParams({ q, cat, min_price:min, max_price:max, sort, page:1, size:p.size });
+    setParams({ q, cat, city, min_price:min, max_price:max, sort, page:1, size:p.size });
     loadFeatured();
   });
 }
@@ -180,13 +208,15 @@ async function loadFeatured(){
     catEl: document.getElementById('f_cat'),
     minEl: document.getElementById('f_min'),
     maxEl: document.getElementById('f_max'),
-    sortEl: document.getElementById('f_sort')
+    sortEl: document.getElementById('f_sort'),
+    cityEl: document.getElementById('f_city')
   };
   if (f.qEl)   f.qEl.value = p.q;
   if (f.catEl) f.catEl.value = p.cat;
   if (f.minEl) f.minEl.value = p.min_price || '';
   if (f.maxEl) f.maxEl.value = p.max_price || '';
   if (f.sortEl)f.sortEl.value= p.sort;
+  if (f.cityEl) f.cityEl.value = p.city;
 
   renderSkeleton(box, 'product', 12);
 
@@ -198,6 +228,7 @@ async function loadFeatured(){
       limit: p.size,
       offset: (p.page - 1) * p.size
     };
+    if (p.city) params.city = p.city;
     if (p.min_price) params.min_price = String(Math.round(+p.min_price * 100));
     if (p.max_price) params.max_price = String(Math.round(+p.max_price * 100));
 
@@ -224,6 +255,8 @@ async function loadFeatured(){
 
 // Başlat
 async function boot(){
+  const initial = getParams();
+  populateCitySelect(initial.city);
   wireFiltersApply();
   wireSort();
   wireCategoryClicks();

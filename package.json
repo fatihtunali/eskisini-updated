@@ -14,7 +14,8 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
-    "mysql2": "^3.10.3"
+    "mysql2": "^3.10.3",
+    "http-proxy": "^1.18.1"
   },
   "devDependencies": {
     "browser-sync": "^3.0.4",

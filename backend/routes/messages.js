@@ -73,7 +73,23 @@ r.get('/thread/:id', authRequired, async (req, res) => {
       ORDER BY id ASC`,
     [convoId]
   );
-  res.json({ ok:true, messages: msgs });
+
+  const [participants] = await pool.query(
+    `SELECT id, full_name FROM users WHERE id IN (?, ?)`,
+    [c.buyer_id, c.seller_id]
+  );
+  const nameById = Object.fromEntries(participants.map(u => [u.id, u.full_name]));
+
+  res.json({
+    ok:true,
+    conversation: {
+      buyer_id: c.buyer_id,
+      buyer_name: nameById[c.buyer_id] || null,
+      seller_id: c.seller_id,
+      seller_name: nameById[c.seller_id] || null
+    },
+    messages: msgs
+  });
 });
 
 /* ---------- Mesaj gönder ---------- */

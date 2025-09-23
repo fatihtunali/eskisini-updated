@@ -13,7 +13,7 @@
     });
     if (r.status === 401) {
       const next = location.pathname + location.search + location.hash;
-      location.href = `/login.html?next=${encodeURIComponent(next)}`;
+      location.href = `/login.html?redirect=${encodeURIComponent(next)}`;
       return null;
     }
     const d = await r.json();

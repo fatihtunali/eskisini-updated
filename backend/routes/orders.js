@@ -1,22 +1,10 @@
 // backend/routes/orders.js
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import { pool } from '../db.js';
+import { authRequired } from '../mw/auth.js';
 
 const router = express.Router();
 
-// ---- auth & cache helpers
-function requireAuth(req, res, next) {
-  try {
-    const token = req.cookies?.token;
-    if (!token) return res.status(401).json({ ok: false, error: 'UNAUTHORIZED' });
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.auth = { id: payload.id };
-    next();
-  } catch {
-    return res.status(401).json({ ok: false, error: 'UNAUTHORIZED' });
-  }
-}
 function noStore(res) {
   res.set('Cache-Control', 'no-store');
   res.set('Pragma', 'no-cache');
@@ -24,7 +12,7 @@ function noStore(res) {
 }
 
 // ---- create order
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', authRequired, async (req, res) => {
   noStore(res);
 
   const { listing_id, qty = 1 } = req.body || {};
@@ -49,7 +37,7 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     const listing   = L[0];
-    const buyerId   = req.auth.id;
+    const buyerId   = req.user.id;
     const sellerId  = listing.seller_id;
     const unitMinor = Number(listing.price_minor) || 0;
     const currency  = listing.currency || 'TRY';
@@ -101,7 +89,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // ---- cancel order (BUYER; only pending)
-router.post('/:id/cancel', requireAuth, async (req, res) => {
+router.post('/:id/cancel', authRequired, async (req, res) => {
   noStore(res);
   const orderId = Number(req.params.id || 0);
   if (!orderId) return res.status(400).json({ ok: false, error: 'INVALID_ID' });
@@ -117,7 +105,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
     if (!rows.length) return res.status(404).json({ ok:false, error:'ORDER_NOT_FOUND' });
 
     const o = rows[0];
-    if (o.buyer_id !== req.auth.id) {
+    if (o.buyer_id !== req.user.id) {
       return res.status(403).json({ ok:false, error:'FORBIDDEN' });
     }
     if (o.status !== 'pending') {
@@ -139,8 +127,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
 });
 
 // ---- my purchases (buyer side)
-// Not: iptal edilenleri gizliyoruz; ?include_cancelled=1 gelirse gösteririz.
-router.get('/mine', requireAuth, async (req, res) => {
+router.get('/mine', authRequired, async (req, res) => {
   noStore(res);
   const includeCancelled = String(req.query.include_cancelled||'').trim() === '1';
   const statusClause = includeCancelled ? '' : `AND o.status <> 'cancelled'`;
@@ -171,7 +158,7 @@ router.get('/mine', requireAuth, async (req, res) => {
       ORDER BY o.id DESC
       LIMIT 100
       `,
-      [req.auth.id]
+      [req.user.id]
     );
 
     return res.json({ ok: true, orders: rows });
@@ -181,8 +168,8 @@ router.get('/mine', requireAuth, async (req, res) => {
   }
 });
 
-// ---- my sales (seller side) – iptal gizleme aynı mantıkla
-router.get('/sold', requireAuth, async (req, res) => {
+// ---- my sales (seller side)
+router.get('/sold', authRequired, async (req, res) => {
   noStore(res);
   const includeCancelled = String(req.query.include_cancelled||'').trim() === '1';
   const statusClause = includeCancelled ? '' : `AND o.status <> 'cancelled'`;
@@ -213,7 +200,7 @@ router.get('/sold', requireAuth, async (req, res) => {
       ORDER BY o.id DESC
       LIMIT 100
       `,
-      [req.auth.id]
+      [req.user.id]
     );
 
     return res.json({ ok: true, orders: rows });
