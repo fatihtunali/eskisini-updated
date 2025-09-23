@@ -1,4 +1,4 @@
-// public/js/home.js
+// public/js/home.js - Sadece Liste Modu
 window.addEventListener('DOMContentLoaded', () => {
   if (typeof includePartials === 'function') includePartials();
   boot();
@@ -70,34 +70,36 @@ function setParams(obj){
   history.replaceState(null,'',u.toString());
 }
 
-// 🔧 Kart şablonu (artık tüm kart <a> değil): data-listing-id + .btn-buy eklendi
+// 🆕 Liste format kart şablonu (ana kart template)
 function productCard(x){
-  const price = x.price || 0; // Sadece x.price kullan
+  const price = x.price || 0;
   const currency = x.currency || 'TRY';
   
   const cover = x.cover || 'assets/hero.jpg';
   const href  = `listing.html?slug=${encodeURIComponent(x.slug)}`;
 
   return `
-    <article class="card product-card" data-listing-id="${x.id}">
+    <div class="card-list" data-listing-id="${x.id}">
       <div class="media">
-        <a class="thumb" href="${href}">
-          <img src="${cover}" alt="${h(x.title)}" data-fallback>
+        <a href="${href}">
+          <img src="${cover}" alt="${h(x.title)}" data-fallback loading="lazy">
         </a>
       </div>
-      <div class="pad">
-        <div class="p-meta">
-          <div class="p-price">${fmtPrice(price, currency)}</div>
-          <div class="p-views" aria-label="Görüntülenme">👁 ${Math.floor(50 + Math.random()*250)}</div>
+      <div class="content">
+        <div class="p-title">
+          <a href="${href}">${h(x.title)}</a>
         </div>
-        <h3 class="p-title"><a href="${href}">${h(x.title)}</a></h3>
-        <div class="p-sub muted">${h(x.location_city || '')}</div>
-        <div class="actions" style="display:flex;gap:8px;margin-top:8px">
-          <a class="btn" href="${href}">Görüntüle</a>
-          <button class="btn btn-buy" type="button">Satın Al</button>
+        <div class="p-subtitle">${h(x.location_city || '')}</div>
+        <div class="meta-row">
+          <div class="p-price-full">${fmtPrice(price, currency)}</div>
+          <div class="p-views">👁 ${Math.floor(50 + Math.random()*250)} görüntülenme</div>
         </div>
       </div>
-    </article>
+      <div class="actions">
+        <a href="${href}" class="btn btn-detail">Detay</a>
+        <button class="btn btn-buy" type="button">Satın Al</button>
+      </div>
+    </div>
   `;
 }
 
@@ -127,6 +129,7 @@ function populateCitySelect(selected){
   sel.value = selected || '';
   sel.dataset.bound = '1';
 }
+
 function categoryListItem(c){
   return `<li><a href="index.html?cat=${encodeURIComponent(c.slug)}" data-cat-link="${h(c.slug)}">${h(c.name)}</a></li>`;
 }
@@ -206,7 +209,7 @@ async function loadCategories(){
   }
 }
 
-// Ürünleri getir (öne çıkanlar/sonuç)
+// Ürünleri getir (öne çıkanlar/sonuç) - Sadece Liste Modu
 async function loadFeatured(){
   const box = document.getElementById('featured');
   const title = document.getElementById('hFeatured');
@@ -228,6 +231,9 @@ async function loadFeatured(){
   if (f.maxEl) f.maxEl.value = p.max_price || '';
   if (f.sortEl)f.sortEl.value= p.sort;
   if (f.cityEl) f.cityEl.value = p.city;
+
+  // Sadece liste modu - container sınıfını ayarla
+  box.className = 'featured-list';
 
   renderSkeleton(box, 'product', 12);
 
@@ -251,7 +257,10 @@ async function loadFeatured(){
 
     if (items.length){
       if (title) title.style.display = 'block';
+      
+      // Sadece liste format
       box.innerHTML = items.map(productCard).join('');
+      
       attachImgFallback(box);
       if (window.FAV) await FAV.wireFavButtons(box);
     }else{

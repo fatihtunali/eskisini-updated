@@ -13,22 +13,7 @@
 
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/fav.css">
-  <style>
-    /* Ana sayfa iki kolon: sol panel + sağ sonuçlar */
-    .home-layout{display:grid;grid-template-columns:260px 1fr;gap:18px}
-    @media (max-width:900px){.home-layout{grid-template-columns:1fr}}
-    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px}
-    .panel h3{margin:4px 0 8px;font-size:1rem}
-    .filters .field{display:block;margin:10px 0}
-    .filters input,.filters select{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
-    .catlist{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
-    .catlist a{display:block;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px;text-decoration:none;color:#111827;background:#fff}
-    .catlist a:hover{background:#f9fafb}
-    .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:0 0 12px}
-    /* Kart görselleri tek tip */
-    .card .media{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:10px;background:#eef2f7}
-    .card .media > img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-  </style>
+  <link rel="stylesheet" href="css/home.css">
 </head>
 <body>
 
@@ -102,7 +87,7 @@
         </div>
       </div>
 
-      <div id="featured" class="grid five" aria-live="polite"></div>
+      <div id="featured" class="featured-list" aria-live="polite"></div>
       <div id="pager" hidden></div>
     </section>
 
@@ -111,17 +96,17 @@
   <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>
 
- <script src="js/partials.js"></script>
-<script src="js/config.js"></script>
-<script src="js/api.js"></script>
-<script src="js/fav.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/session.js"></script>
-<script src="js/header.js"></script>
-<script src="js/cities-tr.js"></script>
-<script src="js/home.js"></script>
-<script src="js/buy.js"></script>
+  <script src="js/partials.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/fav.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/session.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/cities-tr.js"></script>
+  <script src="js/home.js"></script>
+  <script src="js/buy.js"></script>
 
   <script>
     // Partials yükle (header/footer için)
