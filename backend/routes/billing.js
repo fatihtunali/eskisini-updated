@@ -10,8 +10,8 @@ function toPerksArray(perks, fallback = []) {
   if (Array.isArray(perks)) return perks;
   if (perks == null) return fallback;
   if (typeof perks === 'string') {
-    // JSON gibi görünüyorsa parse etmeyi dene
     const s = perks.trim();
+    // JSON gibi görünüyorsa parse etmeyi dene
     if ((s.startsWith('[') && s.endsWith(']')) || (s.startsWith('"') && s.endsWith('"'))) {
       try {
         const j = JSON.parse(s);
@@ -50,6 +50,7 @@ r.get('/plans', async (_req, res) => {
     res.json({ ok: true, plans });
   } catch (e) {
     console.error('GET /billing/plans error =>', e);
+    // network/DB sorunlarında boş liste dön
     res.json({ ok: true, plans: [] });
   }
 });
@@ -73,6 +74,7 @@ r.get('/me', authRequired, async (req, res) => {
     );
 
     if (!rows.length) {
+      // aktif abonelik yoksa "free" planı bul, yoksa .env fallback
       const [[freePlan]] = await pool.query(
         `SELECT code, name, price_minor, currency, period,
                 listing_quota_month, bump_credits_month, featured_credits_month,
@@ -131,6 +133,7 @@ r.get('/me', authRequired, async (req, res) => {
     });
   } catch (e) {
     console.error('GET /billing/me error =>', e);
+    // Hata durumunda bile frontend boş kalmasın: "free" fallback
     res.status(200).json({
       ok: true,
       subscription: null,

@@ -96,7 +96,7 @@ function categoryListItem(c){
   return `<li><a href="index.html?cat=${encodeURIComponent(c.slug)}" data-cat-link="${h(c.slug)}">${h(c.name)}</a></li>`;
 }
 
-// Sol panel: filtre “Uygula”
+// Sol panel: filtre "Uygula"
 function wireFiltersApply(){
   const apply = document.getElementById('apply');
   if (!apply) return;
@@ -137,7 +137,7 @@ function wireCategoryClicks(){
   });
 }
 
-// Kategorileri hem select’e hem listeye doldur
+// Kategorileri hem select'e hem listeye doldur
 async function loadCategories(){
   const listEl = document.getElementById('catList');
   const selEl  = document.getElementById('f_cat');
@@ -145,7 +145,10 @@ async function loadCategories(){
   if (listEl) renderSkeleton(listEl, 'cat', 8);
 
   try{
-    const res = await window.API.getMainCategories(); // /api/categories/main
+    const res = await (window.API && window.API.categories 
+      ? window.API.categories.getMain() 
+      : window.API.getMainCategories() // fallback
+    ); 
     const categories = res?.categories || [];
     if (categories.length){
       if (listEl) listEl.innerHTML = categories.map(categoryListItem).join('');
@@ -201,7 +204,10 @@ async function loadFeatured(){
     if (p.min_price) params.min_price = String(Math.round(+p.min_price * 100));
     if (p.max_price) params.max_price = String(Math.round(+p.max_price * 100));
 
-    const res = await window.API.search(params); // /api/listings/search
+    const res = await (window.API && window.API.listings
+      ? window.API.listings.search(params)
+      : window.API.search(params) // fallback
+    );
     const items = res?.listings || [];
 
     if (items.length){

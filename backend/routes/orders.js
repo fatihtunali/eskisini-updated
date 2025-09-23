@@ -1,55 +1,53 @@
 // backend/routes/orders.js
-import express from 'express';
-import jwt from 'jsonwebtoken';
+import { Router } from 'express';
 import { pool } from '../db.js';
+import { authRequired } from '../mw/auth.js';
 
-const router = express.Router();
+const router = Router();
 
-// ---- auth & cache helpers
-function requireAuth(req, res, next) {
-  try {
-    const token = req.cookies?.token;
-    if (!token) return res.status(401).json({ ok: false, error: 'UNAUTHORIZED' });
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.auth = { id: payload.id };
-    next();
-  } catch {
-    return res.status(401).json({ ok: false, error: 'UNAUTHORIZED' });
-  }
-}
+/* ------------ cache helpers ------------ */
 function noStore(res) {
   res.set('Cache-Control', 'no-store');
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
 }
 
-// ---- create order
-router.post('/', requireAuth, async (req, res) => {
+/* ------------ CREATE ORDER ------------ */
+/**
+ * POST /api/orders
+ * body: { listing_id, qty? }
+ * - Sadece status='active' ilanlardan oluşturur.
+ * - Aynı alıcı + ilan için 'pending' sipariş varsa tekrar kullanır (dupe engeli).
+ * - Self purchase ENV ile kontrol edilir: ALLOW_SELF_PURCHASE=true ise izin.
+ */
+router.post('/', authRequired, async (req, res) => {
   noStore(res);
 
   const { listing_id, qty = 1 } = req.body || {};
-  if (!listing_id) return res.status(400).json({ ok: false, error: 'MISSING_LISTING_ID' });
-
   const q = Math.max(1, Number(qty) || 1);
-  const conn = await pool.getConnection();
+  if (!Number.isFinite(Number(listing_id)) || Number(listing_id) <= 0) {
+    return res.status(400).json({ ok: false, error: 'MISSING_LISTING_ID' });
+  }
 
+  const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
+    // Yalnızca aktif ilan
     const [L] = await conn.query(
       `SELECT id, seller_id, title, price_minor, currency
          FROM listings
-        WHERE id = ? AND (status IS NULL OR status <> 'deleted')
+        WHERE id = ? AND status = 'active'
         LIMIT 1`,
       [listing_id]
     );
     if (!L.length) {
       await conn.rollback();
-      return res.status(404).json({ ok: false, error: 'LISTING_NOT_FOUND' });
+      return res.status(404).json({ ok: false, error: 'LISTING_NOT_FOUND_OR_INACTIVE' });
     }
 
     const listing   = L[0];
-    const buyerId   = req.auth.id;
+    const buyerId   = req.user.id;
     const sellerId  = listing.seller_id;
     const unitMinor = Number(listing.price_minor) || 0;
     const currency  = listing.currency || 'TRY';
@@ -59,12 +57,14 @@ router.post('/', requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: 'INVALID_PRICE' });
     }
 
+    // Self purchase kuralı
     const allowSelf = String(process.env.ALLOW_SELF_PURCHASE || '').toLowerCase() === 'true';
     if (buyerId === sellerId && !allowSelf) {
       await conn.rollback();
       return res.status(400).json({ ok: false, error: 'SELF_BUY_FORBIDDEN' });
     }
 
+    // Aynı alıcı + ilan için pending sipariş var mı?
     const [D] = await conn.query(
       `SELECT id FROM orders
         WHERE buyer_id = ? AND listing_id = ? AND status = 'pending'
@@ -83,8 +83,8 @@ router.post('/', requireAuth, async (req, res) => {
     const [ins] = await conn.query(
       `INSERT INTO orders
          (buyer_id, seller_id, listing_id, qty,
-          unit_price_minor, currency, subtotal_minor, shipping_minor, total_minor, status)
-       VALUES (?,?,?,?, ?,?,?,?,?,'pending')`,
+          unit_price_minor, currency, subtotal_minor, shipping_minor, total_minor, status, created_at, updated_at)
+       VALUES (?,?,?,?, ?,?,?,?,?,'pending', NOW(), NOW())`,
       [buyerId, sellerId, listing_id, q,
        unitMinor, currency, subtotal_minor, shipping_minor, total_minor]
     );
@@ -100,24 +100,27 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// ---- cancel order (BUYER; only pending)
-router.post('/:id/cancel', requireAuth, async (req, res) => {
+/* ------------ CANCEL ORDER (buyer, only pending) ------------ */
+/**
+ * POST /api/orders/:id/cancel
+ */
+router.post('/:id/cancel', authRequired, async (req, res) => {
   noStore(res);
   const orderId = Number(req.params.id || 0);
-  if (!orderId) return res.status(400).json({ ok: false, error: 'INVALID_ID' });
+  if (!Number.isFinite(orderId) || orderId <= 0) {
+    return res.status(400).json({ ok: false, error: 'INVALID_ID' });
+  }
 
   try {
-    const [rows] = await pool.query(
+    const [[o]] = await pool.query(
       `SELECT id, buyer_id, status
          FROM orders
         WHERE id = ?
         LIMIT 1`,
       [orderId]
     );
-    if (!rows.length) return res.status(404).json({ ok:false, error:'ORDER_NOT_FOUND' });
-
-    const o = rows[0];
-    if (o.buyer_id !== req.auth.id) {
+    if (!o) return res.status(404).json({ ok:false, error:'ORDER_NOT_FOUND' });
+    if (o.buyer_id !== req.user.id) {
       return res.status(403).json({ ok:false, error:'FORBIDDEN' });
     }
     if (o.status !== 'pending') {
@@ -138,9 +141,11 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
   }
 });
 
-// ---- my purchases (buyer side)
-// Not: iptal edilenleri gizliyoruz; ?include_cancelled=1 gelirse gösteririz.
-router.get('/mine', requireAuth, async (req, res) => {
+/* ------------ MY PURCHASES (buyer side) ------------ */
+/**
+ * GET /api/orders/mine?include_cancelled=1
+ */
+router.get('/mine', authRequired, async (req, res) => {
   noStore(res);
   const includeCancelled = String(req.query.include_cancelled||'').trim() === '1';
   const statusClause = includeCancelled ? '' : `AND o.status <> 'cancelled'`;
@@ -154,24 +159,21 @@ router.get('/mine', requireAuth, async (req, res) => {
         o.subtotal_minor, o.shipping_minor, o.total_minor,
         o.status, o.created_at,
         l.title, l.slug,
-        li.file_url AS thumb_url
+        (
+          SELECT li.file_url
+          FROM listing_images li
+          WHERE li.listing_id = o.listing_id
+          ORDER BY li.sort_order, li.id
+          LIMIT 1
+        ) AS thumb_url
       FROM orders o
       JOIN listings l ON l.id = o.listing_id
-      LEFT JOIN (
-        SELECT li1.listing_id, li1.file_url
-        FROM listing_images li1
-        JOIN (
-          SELECT listing_id, MIN(id) AS first_id
-          FROM listing_images
-          GROUP BY listing_id
-        ) t ON t.first_id = li1.id
-      ) li ON li.listing_id = o.listing_id
       WHERE o.buyer_id = ?
         ${statusClause}
       ORDER BY o.id DESC
       LIMIT 100
       `,
-      [req.auth.id]
+      [req.user.id]
     );
 
     return res.json({ ok: true, orders: rows });
@@ -181,8 +183,11 @@ router.get('/mine', requireAuth, async (req, res) => {
   }
 });
 
-// ---- my sales (seller side) – iptal gizleme aynı mantıkla
-router.get('/sold', requireAuth, async (req, res) => {
+/* ------------ MY SALES (seller side) ------------ */
+/**
+ * GET /api/orders/sold?include_cancelled=1
+ */
+router.get('/sold', authRequired, async (req, res) => {
   noStore(res);
   const includeCancelled = String(req.query.include_cancelled||'').trim() === '1';
   const statusClause = includeCancelled ? '' : `AND o.status <> 'cancelled'`;
@@ -196,24 +201,21 @@ router.get('/sold', requireAuth, async (req, res) => {
         o.subtotal_minor, o.shipping_minor, o.total_minor,
         o.status, o.created_at,
         l.title, l.slug,
-        li.file_url AS thumb_url
+        (
+          SELECT li.file_url
+          FROM listing_images li
+          WHERE li.listing_id = o.listing_id
+          ORDER BY li.sort_order, li.id
+          LIMIT 1
+        ) AS thumb_url
       FROM orders o
       JOIN listings l ON l.id = o.listing_id
-      LEFT JOIN (
-        SELECT li1.listing_id, li1.file_url
-        FROM listing_images li1
-        JOIN (
-          SELECT listing_id, MIN(id) AS first_id
-          FROM listing_images
-          GROUP BY listing_id
-        ) t ON t.first_id = li1.id
-      ) li ON li.listing_id = o.listing_id
       WHERE o.seller_id = ?
         ${statusClause}
       ORDER BY o.id DESC
       LIMIT 100
       `,
-      [req.auth.id]
+      [req.user.id]
     );
 
     return res.json({ ok: true, orders: rows });

@@ -7,16 +7,17 @@ const r = Router();
 
 // Basit E.164 normalize (TR pratikleri dahil)
 function normalizeE164(raw) {
-  if (!raw) return null;
+  if (raw == null) return undefined; // alan gelmemişse undefined dön
   let s = String(raw).trim();
+  if (s === '') return null;         // boş string => NULL olarak temizle
   // sadece rakam ve + kalsın
   s = s.replace(/[^\d+]/g, '');
   // 0xxxxxxxxxx -> +90xxxxxxxxxx
-  if (/^0\d{10}$/.test(s)) s = '+9' + s;        // +90… olacak
+  if (/^0\d{10}$/.test(s)) s = '+9' + s;     // +90… olacak
   // 90xxxxxxxxxx -> +90xxxxxxxxxx
   if (/^90\d{10}$/.test(s)) s = '+' + s;
   // +90 5xx … (zaten + ile başlıyorsa olduğu gibi bırak)
-  if (!/^\+\d{8,15}$/.test(s)) return null;
+  if (!/^\+\d{8,15}$/.test(s)) return null;  // geçersiz => null (400 döndüreceğiz)
   return s;
 }
 
@@ -37,48 +38,68 @@ r.get('/profile', authRequired, async (req, res) => {
  * Profil güncelle
  * POST /api/users/profile
  * body: { full_name?, phone_e164? }
+ *
+ * Not:
+ *  - Alan gönderilmemişse hiç dokunmayız.
+ *  - full_name = "" gönderilirse NULL’a çekilir.
+ *  - phone_e164 = "" gönderilirse NULL’a çekilir (telefon temizleme).
  */
 r.post('/profile', authRequired, async (req, res) => {
   try {
-    let { full_name, phone_e164 } = req.body || {};
+    const body = req.body || {};
+    let { full_name } = body;
+    let phone_e164 = body.hasOwnProperty('phone_e164') ? body.phone_e164 : undefined;
 
-    // full_name doğrulama (opsiyonel alan)
-    if (full_name != null) {
+    // full_name doğrulama (yalnızca gönderildiyse)
+    if (full_name !== undefined) {
       full_name = String(full_name).trim();
-      if (full_name.length === 0) full_name = null;
+      if (full_name === '') full_name = null; // boşsa temizle
       if (full_name && full_name.length > 120) {
         return res.status(400).json({ ok:false, error:'full_name_too_long' });
       }
-    } else {
-      full_name = null; // değişmesin istiyorsan bu satırı kaldırabilirsin
     }
 
-    // Telefon normalize + benzersizlik
-    if (phone_e164 != null && String(phone_e164).trim() !== '') {
-      const norm = normalizeE164(phone_e164);
-      if (!norm) return res.status(400).json({ ok:false, error:'telefon_gecersiz' });
-
-      // Başka kullanıcıda var mı?
-      const [dupe] = await pool.query(
-        `SELECT id FROM users WHERE phone_e164=? AND id<>? LIMIT 1`,
-        [norm, req.user.id]
-      );
-      if (dupe.length) {
-        return res.status(409).json({ ok:false, error:'telefon_kayitli' });
+    // Telefon normalize + benzersizlik (yalnızca gönderildiyse)
+    if (phone_e164 !== undefined) {
+      const norm = normalizeE164(phone_e164); // undefined|null|'+90…'
+      if (norm === null) {
+        return res.status(400).json({ ok:false, error:'telefon_gecersiz' });
       }
-      phone_e164 = norm;
-    } else {
-      phone_e164 = null; // değişmesin istiyorsan bu satırı kaldırabilirsin
+      if (norm !== undefined) {
+        // başka kullanıcıda var mı?
+        const [dupe] = await pool.query(
+          `SELECT id FROM users WHERE phone_e164=? AND id<>? LIMIT 1`,
+          [norm, req.user.id]
+        );
+        if (dupe.length) {
+          return res.status(409).json({ ok:false, error:'telefon_kayitli' });
+        }
+      }
+      phone_e164 = norm; // null (sil) / '+90…' (güncelle) / undefined (dokunma)
     }
 
-    // Güncelle (yalnız değişiklik gelmişse set et)
+    // Dinamik SET kur — yalnız gönderilen alanlar
+    const sets = [];
+    const params = [];
+
+    if (full_name !== undefined) {
+      sets.push('full_name = ?');
+      params.push(full_name); // null olabilir
+    }
+    if (phone_e164 !== undefined) {
+      sets.push('phone_e164 = ?');
+      params.push(phone_e164); // null olabilir
+    }
+
+    if (sets.length === 0) {
+      return res.status(400).json({ ok:false, error:'nothing_to_update' });
+    }
+
+    sets.push('updated_at = NOW()');
+
     await pool.query(
-      `UPDATE users
-          SET full_name = COALESCE(?, full_name),
-              phone_e164 = COALESCE(?, phone_e164),
-              updated_at = NOW()
-        WHERE id = ?`,
-      [full_name, phone_e164, req.user.id]
+      `UPDATE users SET ${sets.join(', ')} WHERE id = ?`,
+      [...params, req.user.id]
     );
 
     // Güncellenmiş veriyi döndür

@@ -1,8 +1,8 @@
 // public/js/messages.js
-(function(){
+(function () {
   const API = (window.APP && APP.API_BASE) || '';
-  const $   = (s,r=document)=>r.querySelector(s);
-  const headersNoStore = { 'Accept':'application/json', 'Cache-Control':'no-store' };
+  const $   = (s, r = document) => r.querySelector(s);
+  const headersNoStore = { 'Accept': 'application/json', 'Cache-Control': 'no-store' };
 
   // guard: tek sefer
   if (window.__MSG_BOOTED__) return;
@@ -11,47 +11,70 @@
   let currentUser = null;
   let currentThreadId = null;
   let pollTimer = null;
+  let lastFetchController = null;
 
-  function escapeHTML(s){ return (s??'').toString().replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
-  function toLogin(){ location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search); }
-
-  async function whoami(){
-    try{
-      const r = await fetch(`${API}/api/auth/me`, { credentials:'include', headers: headersNoStore, cache:'no-store' });
-      if (!r.ok) return null;
-      const d = await r.json(); return d.user || d;
-    }catch{ return null; }
+  function escapeHTML(s) {
+    return (s ?? '').toString().replace(/[&<>"']/g, m => (
+      m === '&' ? '&amp;' :
+      m === '<' ? '&lt;'  :
+      m === '>' ? '&gt;'  :
+      m === '"' ? '&quot;': '&#39;'
+    ));
+  }
+  function toLogin() {
+    location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search);
   }
 
-  async function loadThreads(){
+  async function whoami() {
+    try {
+      const r = await fetch(`${API}/api/auth/me`, {
+        credentials: 'include',
+        headers: headersNoStore,
+        cache: 'no-store'
+      });
+      if (!r.ok) return null;
+      const d = await r.json();
+      return d.user || d;
+    } catch { return null; }
+  }
+
+  async function loadThreads() {
     const root = $('#threads'); if (!root) return;
     root.innerHTML = '<div class="pad">Yükleniyor…</div>';
 
-    const r = await fetch(`${API}/api/messages/threads?_ts=${Date.now()}`, {
-      credentials:'include', headers: headersNoStore, cache:'no-store'
-    });
-    if (r.status === 401) { toLogin(); return; }
-    if (!r.ok){ root.innerHTML = '<div class="pad error">Mesajlar alınamadı.</div>'; return; }
+    try {
+      const r = await fetch(`${API}/api/messages/threads?_ts=${Date.now()}`, {
+        credentials: 'include', headers: headersNoStore, cache: 'no-store'
+      });
+      if (r.status === 401) { toLogin(); return; }
+      if (!r.ok) throw new Error('HTTP ' + r.status);
 
-    const data = await r.json();
-    const list = data.threads || [];
-    if (!list.length){ root.innerHTML = '<div class="empty">Henüz mesajınız yok.</div>'; return; }
+      const data = await r.json();
+      const list = data.threads || [];
+      if (!list.length) {
+        root.innerHTML = '<div class="empty">Henüz mesajınız yok.</div>';
+        return;
+      }
 
-    root.innerHTML = list.map(t=>{
-      const prev = escapeHTML(t.last_message_preview || '—');
-      const when = t.updated_at ? new Date(t.updated_at).toLocaleString('tr-TR') : '';
-      const other = escapeHTML(t.other_user_name || 'Kullanıcı');
-      const title = escapeHTML(t.listing_title || '');
-      return `
-        <a class="item" href="/thread.html?id=${encodeURIComponent(t.id)}">
-          <div><b>${other}</b>${title ? ` • <span class="muted">${title}</span>` : ''}</div>
-          <div class="muted">${prev}</div>
-          <div class="muted small">${when}</div>
-        </a>`;
-    }).join('');
+      root.innerHTML = list.map(t => {
+        const prev  = escapeHTML(t.last_message_preview || '—');
+        const when  = t.updated_at ? new Date(t.updated_at).toLocaleString('tr-TR') : '';
+        const other = escapeHTML(t.other_user_name || 'Kullanıcı');
+        const title = escapeHTML(t.listing_title || '');
+        return `
+          <a class="item" href="/thread.html?id=${encodeURIComponent(t.id)}">
+            <div><b>${other}</b>${title ? ` • <span class="muted">${title}</span>` : ''}</div>
+            <div class="muted">${prev}</div>
+            <div class="muted small">${when}</div>
+          </a>`;
+      }).join('');
+    } catch (e) {
+      console.error('[threads] list error', e);
+      root.innerHTML = '<div class="pad error">Mesajlar alınamadı.</div>';
+    }
   }
 
-  async function ensureConversationFromQuery(qs){
+  async function ensureConversationFromQuery(qs) {
     const listing = Number(qs.get('listing') || 0);
     const seller  = Number(qs.get('seller') || 0);
     if (!listing) return null;
@@ -60,55 +83,72 @@
     if (seller > 0) payload.to_user_id = seller;
 
     const r = await fetch(`${API}/api/messages/start`, {
-      method:'POST', credentials:'include',
-      headers:{ 'Content-Type':'application/json', ...headersNoStore },
-      cache:'no-store', body: JSON.stringify(payload)
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...headersNoStore },
+      cache: 'no-store',
+      body: JSON.stringify(payload)
     });
     if (r.status === 401) { toLogin(); return null; }
-    const d = await r.json().catch(()=>({}));
+    const d = await r.json().catch(() => ({}));
     if (!r.ok || d.ok === false) return null;
     return d.conversation_id;
   }
 
-  async function loadThreadMessages(){
+  async function loadThreadMessages() {
     const box = $('#msgs');
     if (!box || !currentThreadId) return;
 
-    try{
-      const r = await fetch(`${API}/api/messages/thread/${encodeURIComponent(currentThreadId)}?_ts=${Date.now()}`, {
-        credentials:'include', headers: headersNoStore, cache:'no-store'
-      });
-      if (r.status === 401) { toLogin(); return; }
-      if (!r.ok) throw 0;
-      const data = await r.json();
+    // Eski isteği iptal et
+    try { lastFetchController?.abort(); } catch {}
+    lastFetchController = new AbortController();
 
-      box.innerHTML = (data.messages || []).map(m=>{
+    try {
+      const r = await fetch(
+        `${API}/api/messages/thread/${encodeURIComponent(currentThreadId)}?_ts=${Date.now()}`,
+        {
+          credentials: 'include',
+          headers: headersNoStore,
+          cache: 'no-store',
+          signal: lastFetchController.signal
+        }
+      );
+      if (r.status === 401) { toLogin(); return; }
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+
+      const data = await r.json();
+      box.innerHTML = (data.messages || []).map(m => {
         const mine = !!(currentUser && m.sender_id === currentUser.id);
         const time = m.created_at ? new Date(m.created_at).toLocaleString('tr-TR') : '';
-        return `<div class="bubble ${mine?'me':''}">
+        return `<div class="bubble ${mine ? 'me' : ''}">
           ${escapeHTML(m.body || '')}
           <span class="time">${time}</span>
         </div>`;
       }).join('') || '<div class="pad muted">Henüz mesaj yok.</div>';
 
       box.scrollTop = box.scrollHeight;
-    }catch{
+    } catch (e) {
+      if (e?.name === 'AbortError') return; // yeni istek başlatıldı
+      console.error('[thread] load error', e);
       box.innerHTML = '<div class="pad error">Mesajlar yüklenemedi.</div>';
     }
   }
 
-  function wireSendForm(){
+  function wireSendForm() {
     const form = $('#send'); if (!form) return;
-    form.addEventListener('submit', async (e)=>{
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentThreadId) return;
       const fd = new FormData(form);
-      const body = String(fd.get('body')||'').trim();
+      const body = String(fd.get('body') || '').trim();
       if (!body) return;
+
       const r = await fetch(`${API}/api/messages/thread/${encodeURIComponent(currentThreadId)}`, {
-        method:'POST', credentials:'include',
-        headers:{ 'Content-Type':'application/json', ...headersNoStore },
-        cache:'no-store', body: JSON.stringify({ body })
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...headersNoStore },
+        cache: 'no-store',
+        body: JSON.stringify({ body })
       });
       if (r.status === 401) { toLogin(); return; }
       if (!r.ok) return;
@@ -117,23 +157,23 @@
     });
   }
 
-  async function bootThread(){
+  async function bootThread() {
     const box = $('#msgs'); if (!box) return;
 
-    // kullanıcıyı YALNIZCA bir kere getir
+    // kullanıcıyı bir kez getir
     currentUser = await whoami();
     if (!currentUser) { toLogin(); return; }
 
     const qs = new URLSearchParams(location.search);
     let id = qs.get('id');
 
-    if (!id){
+    if (!id) {
       const convId = await ensureConversationFromQuery(qs);
-      if (!convId){ box.innerHTML = '<div class="pad error">Konuşma açılamadı.</div>'; return; }
+      if (!convId) { box.innerHTML = '<div class="pad error">Konuşma açılamadı.</div>'; return; }
       const u = new URL(location.href);
       u.searchParams.delete('listing'); u.searchParams.delete('seller');
       u.searchParams.set('id', convId);
-      history.replaceState(null,'',u.toString());
+      history.replaceState(null, '', u.toString());
       id = String(convId);
     }
 
@@ -141,19 +181,33 @@
     wireSendForm();
     await loadThreadMessages();
 
-    clearInterval(pollTimer);
-    pollTimer = setInterval(loadThreadMessages, 5000);
-    window.addEventListener('beforeunload', ()=>clearInterval(pollTimer), { once:true });
+    // polling: görünürlük durumuna göre yönet
+    function startPolling() {
+      clearInterval(pollTimer);
+      pollTimer = setInterval(loadThreadMessages, 5000);
+    }
+    function stopPolling() {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+    startPolling();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopPolling();
+      else startPolling();
+    });
+
+    window.addEventListener('beforeunload', () => stopPolling(), { once: true });
   }
 
-  function boot(){
+  function boot() {
     loadThreads();
     bootThread();
   }
 
   if (window.includePartials) {
-    document.addEventListener('partials:loaded', boot, { once:true });
+    document.addEventListener('partials:loaded', boot, { once: true });
   } else {
-    window.addEventListener('DOMContentLoaded', boot, { once:true });
+    window.addEventListener('DOMContentLoaded', boot, { once: true });
   }
 })();

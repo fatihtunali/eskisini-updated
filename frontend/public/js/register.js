@@ -1,10 +1,12 @@
-// js/register.js
+// js/register.js — geliştirilmiş, tek dosya kopyalanabilir sürüm
 (function (){
   'use strict';
+
   const API_BASE = (window.APP && window.APP.API_BASE) || '';
   const $ = (s,r=document)=>r.querySelector(s);
 
   function setErr(el, msg){ if(!el) return; el.textContent = msg || ''; el.hidden = !msg; }
+  function setOk(el, msg){ if(!el) return; el.textContent = msg || ''; el.hidden = !msg; }
 
   function normalizePhone(v){
     if(!v) return null;
@@ -15,11 +17,24 @@
     return raw;
   }
 
+  function disableBtn(btn, on=true, busyText='Gönderiliyor…'){
+    if(!btn) return;
+    if(on){
+      btn.dataset._txt = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = busyText;
+    }else{
+      btn.disabled = false;
+      if(btn.dataset._txt) btn.textContent = btn.dataset._txt;
+      delete btn.dataset._txt;
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('form#f[data-auth="register"]');
     if (!form) return;
 
-    // üstte hoş bir hata alanı
+    // Üstte hata ve başarı alanları
     let err = form.querySelector('.form-error');
     if (!err) {
       err = document.createElement('div');
@@ -29,10 +44,35 @@
       err.hidden = true;
       form.insertBefore(err, form.firstChild.nextSibling);
     }
+    let ok = form.querySelector('.form-success');
+    if (!ok) {
+      ok = document.createElement('div');
+      ok.className = 'form-success';
+      ok.setAttribute('role','status');
+      ok.style.cssText = 'margin:8px 0;color:#065f46;background:#d1fae5;border:1px solid #a7f3d0;padding:8px;border-radius:8px;';
+      ok.hidden = true;
+      form.insertBefore(ok, err.nextSibling);
+    }
+
+    // Şifre görünürlüğü (opsiyonel: data-toggle="password" ve data-target ile)
+    const toggles = form.querySelectorAll('[data-toggle="password"]');
+    toggles.forEach(t=>{
+      if(t.dataset.bound) return;
+      t.dataset.bound = '1';
+      t.addEventListener('click', ()=>{
+        const targetSel = t.getAttribute('data-target');
+        const inp = targetSel ? form.querySelector(targetSel) : form.querySelector('input[name="password"]');
+        if(!inp) return;
+        inp.type = (inp.type === 'password') ? 'text' : 'password';
+      });
+    });
+
+    // Terms (opsiyonel)
+    const terms = form.querySelector('input[type="checkbox"][name="terms"]');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      setErr(err, '');
+      setErr(err, ''); setOk(ok, '');
 
       const fd = new FormData(form);
       const full_name  = (fd.get('full_name')  || '').toString().trim();
@@ -43,7 +83,7 @@
       const phone_raw  = (fd.get('phone_e164') || '').toString().trim();
       const tc_no_raw  = (fd.get('tc_no')      || '').toString().trim();
 
-      // basit kontroller
+      // Basit kontroller
       if (!email || !password) {
         setErr(err, 'E-posta ve şifre gerekli.');
         return;
@@ -54,6 +94,10 @@
       }
       if (password !== password2) {
         setErr(err, 'Şifreler aynı olmalı.');
+        return;
+      }
+      if (terms && !terms.checked){
+        setErr(err, 'Şartları kabul etmelisiniz.');
         return;
       }
 
@@ -75,6 +119,9 @@
 
       const payload = { email, password, full_name, username, phone_e164, tc_no };
 
+      const submitBtn = form.querySelector('[type="submit"]');
+      disableBtn(submitBtn, true);
+
       try {
         const res = await fetch(`${API_BASE}/api/auth/register`, {
           method: 'POST',
@@ -85,7 +132,6 @@
 
         const data = await res.json().catch(()=>({}));
         if (!res.ok || data?.ok === false) {
-          // backend’teki Türkçe hata kodlarını güzelce eşleyelim
           const map = {
             email_kayitli:        'Bu e-posta zaten kayıtlı.',
             kullanici_adi_kayitli:'Bu kullanıcı adı zaten alınmış.',
@@ -102,14 +148,18 @@
           return;
         }
 
-        // Başarılı — header’ı güncelle, yönlendir
+        // Başarılı — header’ı güncelle, başarı mesajı göster, yönlendir
+        setOk(ok, 'Kayıt başarılı! Oturum açıldı, yönlendiriliyorsunuz…');
         document.dispatchEvent(new CustomEvent('auth:login', { detail: { user: data.user } }));
+
         const u = new URL(location.href);
         const redirect = u.searchParams.get('redirect') || '/';
-        location.href = redirect;
+        setTimeout(()=>{ location.href = redirect; }, 600);
 
-      } catch (ex) {
+      } catch {
         setErr(err, 'Ağ hatası. Tekrar deneyin.');
+      } finally {
+        disableBtn(submitBtn, false);
       }
     });
   });

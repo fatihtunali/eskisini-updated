@@ -51,57 +51,73 @@
     const navName  = document.getElementById('navName');
     const navKyc   = document.getElementById('navKyc');
     const btnLogout= document.getElementById('btnLogout');
-    
+
     const bar = document.querySelector('.topbar');
     const me = await whoami();
 
-if (!me){
-  bar?.classList.remove('auth');
-  // misafir
-  if (guestNav) guestNav.hidden = false;
-  if (userNav)  userNav.hidden  = true;
-  return;
-}
+    if (!me){
+      bar?.classList.remove('auth');
+      // misafir
+      show(guestNav);
+      hide(userNav);
+      return;
+    }
 
-// oturum açık
-bar?.classList.add('auth');
-if (guestNav) guestNav.hidden = true;
-if (userNav)  userNav.hidden  = false;
+    // oturum açık
+    bar?.classList.add('auth');
+    hide(guestNav);
+    show(userNav);
 
-if (navName) navName.textContent = me.full_name || me.email || 'Hesabım';
-if (navKyc){
-  const ks = String(me.kyc_status || 'none').toLowerCase();
-  navKyc.classList.remove('pending','verified','rejected','none');
-  navKyc.classList.add(ks);
-  navKyc.title = `KYC: ${ks}`;
-}
+    if (navName) navName.textContent = me.full_name || me.email || 'Hesabım';
+    if (navKyc){
+      const ks = String(me.kyc_status || 'none').toLowerCase();
+      navKyc.classList.remove('pending','verified','rejected','none');
+      navKyc.classList.add(ks);
+      navKyc.title = `KYC: ${ks}`;
+    }
 
-// toggle dropdown
-const toggle = document.getElementById('userToggle');
-const userNavEl = document.getElementById('userNav');
-if (toggle && userNavEl){
-  function closeMenu(){
-    userNavEl.classList.remove('open');
-    toggle.setAttribute('aria-expanded','false');
+    // dropdown toggle
+    const toggle = document.getElementById('userToggle');
+    const userNavEl = document.getElementById('userNav');
+    if (toggle && userNavEl){
+      function closeMenu(){
+        userNavEl.classList.remove('open');
+        toggle.setAttribute('aria-expanded','false');
+      }
+      function openMenu(){
+        userNavEl.classList.add('open');
+        toggle.setAttribute('aria-expanded','true');
+      }
+      toggle.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const isOpen = userNavEl.classList.contains('open');
+        isOpen ? closeMenu() : openMenu();
+      });
+      // dışarı tık / ESC kapat
+      document.addEventListener('click', (e)=>{
+        if (!userNavEl.contains(e.target) && e.target !== toggle) closeMenu();
+      });
+      document.addEventListener('keydown', (e)=>{
+        if (e.key === 'Escape') closeMenu();
+      });
+    }
+
+    // logout
+    if (btnLogout){
+      btnLogout.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        try{
+          await fetch(`${API}/api/auth/logout`, {
+            method:'POST',
+            credentials:'include',
+            headers:{ 'Accept':'application/json' }
+          });
+        }catch{}
+        // cookie siliniyor, ana sayfaya dön
+        location.href = '/';
+      }, { once:true });
+    }
   }
-  function openMenu(){
-    userNavEl.classList.add('open');
-    toggle.setAttribute('aria-expanded','true');
-  }
-  toggle.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    const isOpen = userNavEl.classList.contains('open');
-    isOpen ? closeMenu() : openMenu();
-  });
-  // dışarı tık / ESC kapat
-  document.addEventListener('click', (e)=>{
-    if (!userNavEl.contains(e.target)) closeMenu();
-  });
-  document.addEventListener('keydown', (e)=>{
-    if (e.key === 'Escape') closeMenu();
-  });
-}
-
 
   // Yalnız bir tetikleyici: partials varsa onu, yoksa DOMContentLoaded
   if (window.includePartials) {

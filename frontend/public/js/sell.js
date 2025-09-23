@@ -47,7 +47,11 @@
     if (!selectEl) return;
     selectEl.innerHTML = `<option value="">Seçiniz…</option>`;
     try {
-      const { ok, categories = [] } = await fetchJSON(`${API_BASE}/api/categories/main`);
+      const data = await (window.API && window.API.categories 
+        ? window.API.categories.getMain()
+        : fetchJSON(`${API_BASE}/api/categories/main`)
+      );
+      const { ok, categories = [] } = data;
       if (ok && Array.isArray(categories)) {
         for (const c of categories) {
           const opt = document.createElement('option');
@@ -72,7 +76,11 @@
       return;
     }
     try {
-      const { ok, children = [] } = await fetchJSON(`${API_BASE}/api/categories/children/${encodeURIComponent(mainSlug)}`);
+      const data = await (window.API && window.API.categories 
+        ? window.API.categories.getChildren(mainSlug)
+        : fetchJSON(`${API_BASE}/api/categories/children/${encodeURIComponent(mainSlug)}`)
+      );
+      const { ok, children = [] } = data;
       if (ok && children.length) {
         for (const c of children) {
           const opt = document.createElement('option');
@@ -101,7 +109,7 @@
 
   // ---- bind ----
   function bind() {
-    // Form id’leri için fallback: #sellForm veya #f
+    // Form id'leri için fallback: #sellForm veya #f
     const form = $('#sellForm') || $('#f');
     if (!form || form.dataset.bound) return;
     form.dataset.bound = '1';
@@ -109,7 +117,7 @@
     const submitBtn = form.querySelector('[type="submit"]');
     const msg = $('#msg');
 
-    // ID fallback’leri: #mainCat/#subCat veya #catMain/#catChild
+    // ID fallback'leri: #mainCat/#subCat veya #catMain/#catChild
     const catMain  = $('#mainCat') || $('#catMain');
     const catChild = $('#subCat')  || $('#catChild');
     const customWrap = $('#customSlugWrap'); // varsa
@@ -185,7 +193,7 @@
 
         // auth
         const user = await getMe();
-        if (!user) return; // 401 yönlendirmesi fetchJSON’da
+        if (!user) return; // 401 yönlendirmesi fetchJSON'da
 
         const fd = new FormData(form);
 
@@ -239,19 +247,25 @@
           image_urls
         };
 
-        const r = await fetch(`${API_BASE}/api/listings`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-        const data = await r.json().catch(() => ({}));
-        if (!r.ok || data.ok === false) {
-          throw new Error(data.error || data.message || `HTTP ${r.status}`);
-        }
+        const data = await (window.API && window.API.listings
+          ? window.API.listings.create(payload)
+          : (async () => {
+              const r = await fetch(`${API_BASE}/api/listings`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+              });
+              const d = await r.json().catch(() => ({}));
+              if (!r.ok || d.ok === false) {
+                throw new Error(d.error || d.message || `HTTP ${r.status}`);
+              }
+              return d;
+            })()
+        );
 
         alert('İlan oluşturuldu #' + (data.id ?? ''));
         const detailUrl = slug
@@ -270,7 +284,7 @@
 
   function boot() { bind(); }
 
-  // partials destekliyse
+  // partials destekliyorsa
   document.addEventListener('partials:loaded', boot);
   window.addEventListener('DOMContentLoaded', () => {
     if (typeof includePartials === 'function') includePartials();

@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="tr">
 <head>
-
     <!-- Google Fonts: Inter (TR uyumlu, latin-ext) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +17,7 @@
 
   <!-- Sayfa içi ufak düzenlemeler -->
   <style>
-    /* Grid’deki iki sütunun aynı yükseklikte hizalanması */
+    /* Grid'deki iki sütunun aynı yükseklikte hizalanması */
     .about-grid{
       display:grid;
       grid-template-columns: 1fr 1fr;
@@ -147,13 +146,11 @@
   <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>
 
-  <!-- JS -->
-  <script src="/js/partials.js"></script>
+  <!-- SCRIPTS - Correct order and paths -->
   <script src="/js/config.js"></script>
-  <script src="/public/js/auth.js" defer></script>
-  <script src="js/session.js"></script>
-  <script src="js/buy.js"></script>
-
+  <script src="/js/partials.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/session.js"></script>
 
   <script>
     if (typeof includePartials === 'function') includePartials();

@@ -22,7 +22,8 @@ export const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  charset: 'utf8mb4_general_ci',
+  // ÖNEMLİ: charset => 'utf8mb4' (collation'ı tablo/DB belirler)
+  charset: 'utf8mb4',
   ssl
 });
 
@@ -30,7 +31,11 @@ export async function pingDb(){
   const conn = await pool.getConnection();
   try {
     await conn.ping();
-    console.log('[DB] connected:', `${DB_HOST}:${DB_PORT}/${DB_NAME}`);
+    console.log(
+      '[DB] connected:',
+      `${DB_HOST}:${DB_PORT}/${DB_NAME}`,
+      '| ssl=', (DB_SSL === 'true' ? 'on' : 'off')
+    );
   } finally {
     conn.release();
   }
