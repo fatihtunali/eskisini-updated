@@ -10,40 +10,155 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>İlanlarım | Eskisini Ver Yenisini Al</title>
   <link rel="stylesheet" href="css/styles.css">
-  <style>
-    /* Hafif pager stili; styles.css yoksa hoş gözüksün */
-    .pager{display:flex;gap:12px;align-items:center;justify-content:center;margin:18px 0}
-    .pager button{border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .pager button[disabled]{opacity:.5;cursor:not-allowed}
-  </style>
+  <link rel="stylesheet" href="css/my-listings.css">
 </head>
 <body>
   <div data-include="partials/header.html"></div>
 
-  <main class="container section">
-    <h1>İlanlarım</h1>
-
-    <!-- JS dolduracak -->
-    <div id="listings" class="grid three" aria-live="polite"></div>
-
-    <div class="pager" role="navigation" aria-label="Sayfalama">
-      <button id="prev" type="button" aria-label="Önceki sayfa">‹ Önceki</button>
-      <span id="pinfo" class="muted" aria-live="polite"></span>
-      <button id="next" type="button" aria-label="Sonraki sayfa">Sonraki ›</button>
+  <main class="container section my-listings-page">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <span class="title-icon">📋</span>
+            İlanlarım
+          </h1>
+          <p class="page-subtitle">Tüm ilanlarınızı yönetin ve düzenleyin</p>
+        </div>
+        <div class="header-actions">
+          <a href="/sell.html" class="btn btn-primary btn-add-listing">
+            <span class="btn-icon">➕</span>
+            Yeni İlan Ver
+          </a>
+        </div>
+      </div>
+      
+      <!-- Stats Row -->
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card">
+          <span class="stat-number" id="totalCount">0</span>
+          <span class="stat-label">Toplam İlan</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number" id="activeCount">0</span>
+          <span class="stat-label">Aktif İlan</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number" id="viewsCount">0</span>
+          <span class="stat-label">Toplam Görüntülenme</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number" id="favoritesCount">0</span>
+          <span class="stat-label">Favoriye Eklenme</span>
+        </div>
+      </div>
     </div>
+
+    <!-- Filters and Search -->
+    <div class="filters-section">
+      <div class="search-box">
+        <input type="search" id="searchInput" placeholder="İlanlarınızda ara..." class="search-input">
+        <button type="button" id="searchBtn" class="search-btn">🔍</button>
+      </div>
+      
+      <div class="filter-controls">
+        <select id="statusFilter" class="filter-select">
+          <option value="">Tüm İlanlar</option>
+          <option value="active">Aktif İlanlar</option>
+          <option value="inactive">Pasif İlanlar</option>
+          <option value="sold">Satılan İlanlar</option>
+        </select>
+        
+        <select id="sortFilter" class="filter-select">
+          <option value="newest">En Yeni</option>
+          <option value="oldest">En Eski</option>
+          <option value="most_viewed">En Çok Görüntülenen</option>
+          <option value="price_high">Fiyat: Yüksek → Düşük</option>
+          <option value="price_low">Fiyat: Düşük → Yüksek</option>
+        </select>
+
+        <div class="view-toggle">
+          <button type="button" id="gridView" class="view-btn active" title="Kart Görünümü">⊞</button>
+          <button type="button" id="listView" class="view-btn" title="Liste Görünümü">☰</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>İlanlarınız yükleniyor...</p>
+    </div>
+
+    <!-- Listings Container -->
+    <div id="listings" class="listings-container grid-view" aria-live="polite">
+      <!-- JS will populate this -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display: none;">
+      <div class="empty-icon">📦</div>
+      <h3>Henüz hiç ilanınız yok</h3>
+      <p>İlk ilanınızı vererek satış yapmaya başlayın!</p>
+      <a href="/sell.html" class="btn btn-primary btn-large">
+        <span class="btn-icon">➕</span>
+        İlk İlanımı Ver
+      </a>
+    </div>
+
+    <!-- No Results State -->
+    <div id="noResultsState" class="empty-state" style="display: none;">
+      <div class="empty-icon">🔍</div>
+      <h3>Arama sonucu bulunamadı</h3>
+      <p>Farklı arama terimleri veya filtreler deneyebilirsiniz.</p>
+      <button type="button" class="btn btn-secondary" onclick="clearFilters()">
+        Filtreleri Temizle
+      </button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" id="paginationContainer">
+      <div class="pagination-info">
+        <span id="paginationInfo" class="pagination-text"></span>
+      </div>
+      
+      <div class="pagination-controls">
+        <button id="firstPage" type="button" class="pagination-btn" title="İlk Sayfa">⟨⟨</button>
+        <button id="prevPage" type="button" class="pagination-btn" title="Önceki Sayfa">⟨</button>
+        <div id="pageNumbers" class="page-numbers"></div>
+        <button id="nextPage" type="button" class="pagination-btn" title="Sonraki Sayfa">⟩</button>
+        <button id="lastPage" type="button" class="pagination-btn" title="Son Sayfa">⟩⟩</button>
+      </div>
+    </div>
+
   </main>
 
   <div data-include="partials/footer.html"></div>
 
-  <!-- Sıra: partials → config → auth → session → header → buy → my-listings -->
+  <!-- Scripts -->
   <script src="js/partials.js"></script>
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/session.js"></script>
   <script src="js/header.js"></script>
   <script src="js/buy.js"></script>
-  <script src="js/my-listings.js"></script>
+  <script src="js/my-listings-enhanced.js"></script>
 
-  <script>includePartials();</script>
+  <script>
+    includePartials();
+    
+    // Clear filters function
+    function clearFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('statusFilter').value = '';
+      document.getElementById('sortFilter').value = 'newest';
+      
+      // Trigger reload
+      if (window.MyListings) {
+        window.MyListings.applyFilters();
+      }
+    }
+  </script>
 </body>
 </html>

@@ -1,421 +1,364 @@
-/* Billing Page Styles */
-    /* Plan Badges */
-    .plan-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .plan-free { background: #f3f4f6; color: #6b7280; }
-    .plan-pro { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
-    .plan-business { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-    
-    /* Current Plan Card */
-    .current-plan-card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .plan-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    
-    .plan-icon {
-      font-size: 24px;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f3f4f6;
-      border-radius: 8px;
-    }
-    
-    .plan-info {
-      flex: 1;
-    }
-    
-    .plan-name {
-      font-weight: 700;
-      font-size: 1.2rem;
-      margin-bottom: 4px;
-    }
-    
-    .plan-price {
-      color: #6b7280;
-    }
-    
-    .subscription-info {
-      background: #f0f9ff;
-      border: 1px solid #0ea5e9;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 16px;
-    }
-    
-    .subscription-period {
-      font-size: 0.9rem;
-      color: #0c4a6e;
-    }
-    
-    /* Usage Summary */
-    .usage-summary {
-      display: grid;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    
-    .usage-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid #f3f4f6;
-    }
-    
-    .usage-item:last-child {
-      border-bottom: none;
-    }
-    
-    .usage-label {
-      font-weight: 500;
-    }
-    
-    .usage-value {
-      font-weight: 600;
-      color: #059669;
-    }
-    
-    /* Usage Bars */
-    .usage-bars {
-      display: grid;
-      gap: 16px;
-    }
-    
-    .usage-bar-container {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    
-    .usage-bar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.9rem;
-    }
-    
-    .usage-remaining {
-      color: #6b7280;
-      font-weight: normal;
-    }
-    
-    .usage-bar {
-      height: 8px;
-      background: #e5e7eb;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    
-    .usage-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #10b981, #059669);
-      transition: width 0.3s ease;
-    }
-    
-    .usage-fill.warning {
-      background: linear-gradient(90deg, #f59e0b, #d97706);
-    }
-    
-    .usage-fill.danger {
-      background: linear-gradient(90deg, #ef4444, #dc2626);
-    }
-    
-    .usage-warning {
-      font-size: 0.8rem;
-      padding: 6px 8px;
-      border-radius: 6px;
-      background: #fef2f2;
-      color: #991b1b;
-      border: 1px solid #fecaca;
-    }
-    
-    .usage-warning.warning {
-      background: #fef3c7;
-      color: #92400e;
-      border-color: #fde68a;
-    }
-    
-    /* Upgrade Section */
-    .upgrade-section {
-      text-align: center;
-      padding-top: 16px;
-      border-top: 1px solid #e5e7eb;
-    }
-    
-    .btn-upgrade {
-      width: 100%;
-      padding: 12px 24px;
-      font-weight: 600;
-    }
-    
-    /* Premium Buttons */
-    .premium-btn {
-      padding: 10px 16px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      background: white;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-weight: 500;
-    }
-    
-    .premium-btn:hover {
-      background: #f9fafb;
-    }
-    
-    .premium-btn.btn-disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    /* Payment Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    
-    .payment-modal {
-      background: white;
-      border-radius: 16px;
-      max-width: 500px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      position: relative;
-    }
-    
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 24px 24px 16px;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    
-    .modal-header h3 {
-      margin: 0;
-      font-size: 1.25rem;
-      font-weight: 700;
-    }
-    
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: #6b7280;
-      padding: 4px;
-      line-height: 1;
-    }
-    
-    .modal-close:hover {
-      color: #374151;
-    }
-    
-    .plan-upgrade-info {
-      padding: 16px 24px;
-      text-align: center;
-    }
-    
-    .upgrade-from-to {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-    }
-    
-    .upgrade-arrow {
-      font-size: 1.2rem;
-      color: #6b7280;
-    }
-    
-    .payment-summary {
-      background: #f8fafc;
-      margin: 0 24px;
-      padding: 16px;
-      border-radius: 8px;
-    }
-    
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    
-    .summary-row:last-child {
-      margin-bottom: 0;
-    }
-    
-    .summary-row.total {
-      font-weight: 700;
-      font-size: 1.1rem;
-      padding-top: 8px;
-      border-top: 1px solid #e5e7eb;
-    }
-    
-    .what-you-get {
-      padding: 16px 24px;
-    }
-    
-    .what-you-get h4 {
-      margin: 0 0 12px;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-    
-    .what-you-get ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: grid;
-      gap: 8px;
-    }
-    
-    .what-you-get li {
-      padding: 8px 12px;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 6px;
-      font-size: 0.9rem;
-    }
-    
-    .payment-form {
-      padding: 0 24px 24px;
-    }
-    
-    .form-group {
-      margin-bottom: 16px;
-    }
-    
-    .form-group label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #374151;
-    }
-    
-    .form-group input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      font-size: 16px;
-      transition: border-color 0.2s;
-    }
-    
-    .form-group input:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-    
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    
-    .form-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 24px;
-    }
-    
-    .form-actions .btn {
-      flex: 1;
-      padding: 12px 24px;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    
-    .btn-secondary {
-      background: #f3f4f6;
-      border: 1px solid #d1d5db;
-      color: #374151;
-    }
-    
-    .btn-secondary:hover {
-      background: #e5e7eb;
-    }
-    
-    .btn-primary {
-      background: #3b82f6;
-      border: 1px solid #3b82f6;
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      background: #2563eb;
-    }
-    
-    .btn-primary:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-    
-    .btn-loading {
-      display: none;
-    }
-    
-    /* Responsive */
-    @media (max-width: 640px) {
-      .modal-overlay {
-        padding: 10px;
-      }
-      
-      .payment-modal {
-        max-height: 95vh;
-      }
-      
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-      
-      .form-actions {
-        flex-direction: column;
-      }
-      
-      .upgrade-from-to {
-        flex-direction: column;
-        gap: 8px;
-      }
-      
-      .upgrade-arrow {
-        transform: rotate(90deg);
-      }
-    }
+/* Enhanced Payment Modal Styles - Fixed Positioning */
+
+/* Modal Overlay - Fixed positioning with high z-index */
+.modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  z-index: 99999 !important; /* Very high z-index to ensure it's on top */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  animation: fadeIn 0.3s ease-out !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Payment Modal Container */
+.payment-modal {
+  background: white !important;
+  border-radius: 16px !important;
+  max-width: 500px !important;
+  width: 100% !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+  animation: slideUp 0.3s ease-out !important;
+  margin: auto !important;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ensure modal is scrollable if content is too tall */
+.payment-modal {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
+}
+
+.payment-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.payment-modal::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 4px;
+}
+
+.payment-modal::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.payment-modal::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Modal Header */
+.modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 24px 24px 16px !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  position: sticky !important;
+  top: 0 !important;
+  background: white !important;
+  z-index: 10 !important;
+}
+
+.modal-header h3 {
+  margin: 0 !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+}
+
+.modal-close {
+  background: none !important;
+  border: none !important;
+  font-size: 24px !important;
+  cursor: pointer !important;
+  color: #6b7280 !important;
+  padding: 8px !important;
+  line-height: 1 !important;
+  border-radius: 50% !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.modal-close:hover {
+  color: #374151 !important;
+  background: #f3f4f6 !important;
+}
+
+/* Plan upgrade info */
+.plan-upgrade-info {
+  padding: 20px 24px !important;
+  text-align: center !important;
+  background: #f8fafc !important;
+}
+
+.upgrade-from-to {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 16px !important;
+}
+
+.upgrade-arrow {
+  font-size: 1.5rem !important;
+  color: #10b981 !important;
+  font-weight: bold !important;
+}
+
+/* Payment summary */
+.payment-summary {
+  background: #f8fafc !important;
+  margin: 0 24px 20px !important;
+  padding: 20px !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.summary-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  margin-bottom: 12px !important;
+  font-size: 0.95rem !important;
+}
+
+.summary-row:last-child {
+  margin-bottom: 0 !important;
+}
+
+.summary-row.total {
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  padding-top: 12px !important;
+  border-top: 2px solid #e5e7eb !important;
+  color: #1f2937 !important;
+}
+
+/* What you get section */
+.what-you-get {
+  padding: 20px 24px !important;
+}
+
+.what-you-get h4 {
+  margin: 0 0 16px !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+}
+
+.what-you-get ul {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.what-you-get li {
+  padding: 12px 16px !important;
+  background: #ecfdf5 !important;
+  border: 1px solid #a7f3d0 !important;
+  border-radius: 8px !important;
+  font-size: 0.9rem !important;
+  color: #065f46 !important;
+  font-weight: 500 !important;
+}
+
+/* Payment form */
+.payment-form {
+  padding: 0 24px 24px !important;
+}
+
+.form-group {
+  margin-bottom: 20px !important;
+}
+
+.form-group label {
+  display: block !important;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+  color: #374151 !important;
+  font-size: 0.9rem !important;
+}
+
+.form-group input {
+  width: 100% !important;
+  padding: 14px 16px !important;
+  border: 2px solid #d1d5db !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+  transition: border-color 0.2s ease !important;
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+}
+
+.form-group input:focus {
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+.form-row {
+  display: grid !important;
+  grid-template-columns: 2fr 1fr !important;
+  gap: 16px !important;
+}
+
+/* Form actions */
+.form-actions {
+  display: flex !important;
+  gap: 12px !important;
+  margin-top: 32px !important;
+  padding-top: 20px !important;
+  border-top: 1px solid #e5e7eb !important;
+}
+
+.form-actions .btn {
+  flex: 1 !important;
+  padding: 14px 24px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  font-size: 1rem !important;
+  border: none !important;
+  font-family: inherit !important;
+}
+
+.btn-secondary {
+  background: #f8fafc !important;
+  color: #374151 !important;
+  border: 2px solid #e2e8f0 !important;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0 !important;
+  color: #1f2937 !important;
+}
+
+.btn-primary {
+  background: #3b82f6 !important;
+  color: white !important;
+  border: 2px solid #3b82f6 !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-primary:disabled {
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+.btn-loading {
+  display: none !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 10px !important;
+  }
+  
+  .payment-modal {
+    max-height: 95vh !important;
+    margin: 10px 0 !important;
+  }
+  
+  .modal-header {
+    padding: 20px 20px 12px !important;
+  }
+  
+  .plan-upgrade-info,
+  .what-you-get,
+  .payment-summary {
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+  }
+  
+  .payment-form {
+    padding: 0 20px 20px !important;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  
+  .form-actions {
+    flex-direction: column !important;
+  }
+  
+  .upgrade-from-to {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  
+  .upgrade-arrow {
+    transform: rotate(90deg) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-modal {
+    border-radius: 12px !important;
+    max-height: 98vh !important;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.1rem !important;
+  }
+  
+  .form-group input {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+}
+
+/* Ensure the modal appears above everything else */
+body.modal-open {
+  overflow: hidden !important;
+}
+
+/* Additional fix for any conflicting styles */
+#paymentModal {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+}
