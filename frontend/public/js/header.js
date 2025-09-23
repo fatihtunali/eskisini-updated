@@ -1,4 +1,4 @@
-// public/js/header.js
+// public/js/header.js - TAM KOD
 (function(){
   const API = (window.APP && APP.API_BASE) || '';
   const noStore = { 'Accept':'application/json', 'Cache-Control':'no-store' };
@@ -31,16 +31,11 @@
     }
   }
 
-  function updateParam(searchParams, key, value){
-    if (value) searchParams.set(key, value);
-    else searchParams.delete(key);
-  }
-
   function wireSearch(){
     const form = document.getElementById('searchForm');
     if (!form) return;
 
-    const qInput = document.getElementById('hdrSearch');
+    const qInput = document.getElementById('q');
     const params = new URLSearchParams(location.search);
 
     if (qInput) qInput.value = params.get('q') || '';
@@ -48,9 +43,15 @@
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const q = (document.getElementById('q')?.value || '').trim();
-      const u = new URL('/search.html', location.origin);
-      if (q) u.searchParams.set('q', q);
-      location.href = u.toString();
+      
+      // Ana sayfaya yönlendir - search.html değil!
+      if (q) {
+        const u = new URL('/', location.origin);
+        u.searchParams.set('q', q);
+        location.href = u.toString();
+      } else {
+        location.href = '/';
+      }
     });
   }
 
@@ -83,7 +84,7 @@
     hide(guestNav);
     show(userNav);
 
-    if (navName) navName.textContent = me.full_name || me.email || 'Hesabim';
+    if (navName) navName.textContent = me.full_name || me.email || 'Hesabım';
     if (navKyc){
       const ks = String(me.kyc_status || 'none').toLowerCase();
       navKyc.classList.remove('pending','verified','rejected','none');
@@ -92,23 +93,22 @@
     }
 
     const toggle = document.getElementById('userToggle');
-    const userNavEl = document.getElementById('userNav');
-    if (toggle && userNavEl){
+    if (toggle && userNav){
       function closeMenu(){
-        userNavEl.classList.remove('open');
+        userNav.classList.remove('open');
         toggle.setAttribute('aria-expanded','false');
       }
       function openMenu(){
-        userNavEl.classList.add('open');
+        userNav.classList.add('open');
         toggle.setAttribute('aria-expanded','true');
       }
       toggle.addEventListener('click', (e)=>{
         e.stopPropagation();
-        const isOpen = userNavEl.classList.contains('open');
+        const isOpen = userNav.classList.contains('open');
         isOpen ? closeMenu() : openMenu();
       });
       document.addEventListener('click', (e)=>{
-        if (!userNavEl.contains(e.target) && e.target !== toggle) closeMenu();
+        if (!userNav.contains(e.target)) closeMenu();
       });
       document.addEventListener('keydown', (e)=>{
         if (e.key === 'Escape') closeMenu();
@@ -124,9 +124,12 @@
             credentials:'include',
             headers:{ 'Accept':'application/json' }
           });
-        }catch{}
+        }catch(err){
+          console.warn('Logout request failed:', err);
+        }
+        meCache = { t: 0, v: null };
         location.href = '/';
-      }, { once:true });
+      });
     }
   }
 

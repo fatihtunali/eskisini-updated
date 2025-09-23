@@ -1,4 +1,5 @@
-﻿<header class="hdr">
+﻿<!-- header.html - TAM KOD -->
+<header class="hdr">
   <div class="container topbar">
     <a class="logo brand" href="/">
       <img class="brand-mark" src="/assets/logo.png" alt="Eskisini Ver">
@@ -6,28 +7,28 @@
     </a>
 
     <form class="search" role="search" id="searchForm">
-      <label class="sr-only" for="hdrSearch"></label>
-      <input id="hdrSearch" name="q" type="search" placeholder="Ürün, kategori, marka" autocomplete="off">
-      <button type="submit">Ara</button>
+      <label class="sr-only" for="q">Arama</label>
+      <input id="q" name="q" type="search" placeholder="Ürün ara..." autocomplete="off">
+      <button type="submit">
+        <span class="sr-only">Ara</span>
+        🔍
+      </button>
     </form>
 
-<nav id="guestNav" class="usernav" aria-label="Hesap ve işlemler">
-  <a class="btn" href="/register.html">Kayıt Ol</a>
-  <a class="btn" href="/login.html">Giriş</a>
-  <a class="btn primary" href="/sell.html">+ İlan Ver</a>
-  <a class="badge-verified" href="/kyc.html">KYC</a>
-</nav>
+    <nav id="guestNav" class="usernav" aria-label="Hesap ve işlemler">
+      <a class="btn" href="/register.html">Kayıt Ol</a>
+      <a class="btn" href="/login.html">Giriş</a>
+      <a class="btn primary" href="/sell.html">+ İlan Ver</a>
+      <a class="badge-verified" href="/kyc.html">KYC</a>
+    </nav>
 
-<nav id="userNav" class="usernav" aria-label="Hesabım" hidden>
-  <button id="userToggle" class="user-chip" type="button" aria-haspopup="menu" aria-expanded="false">
-    <span class="avatar" aria-hidden="true">👤</span>
-    <span id="navName" class="name">Hesabım</span>
-    <span id="navKyc" class="badge-verified">KYC</span>
-  </button>
-  <ul class="user-menu" role="menu"> … </ul>
-</nav>
-
-      <!-- dropdown içeriği -->
+    <nav id="userNav" class="usernav" aria-label="Hesabım" hidden>
+      <button id="userToggle" class="user-chip" type="button" aria-haspopup="menu" aria-expanded="false">
+        <span class="avatar" aria-hidden="true">👤</span>
+        <span id="navName" class="name">Hesabım</span>
+        <span id="navKyc" class="badge-verified">KYC</span>
+      </button>
+      
       <ul class="user-menu" role="menu">
         <li role="none"><a role="menuitem" href="/profile.html">Hesabım</a></li>
         <li role="none"><a role="menuitem" href="/favorites.html">Favorilerim</a></li>
@@ -39,24 +40,3 @@
     </nav>
   </div>
 </header>
-
-<!-- Header için gerekli script'ler -->
-<script>
-  // Arama formu işlevi (header.js'deki ile uyumlu)
-  (function() {
-    const form = document.getElementById('searchForm');
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const q = document.getElementById('q')?.value?.trim();
-        if (q) {
-          const url = new URL('/search.html', location.origin);
-          url.searchParams.set('q', q);
-          location.href = url.toString();
-        } else {
-          location.href = '/';
-        }
-      });
-    }
-  })();
-</script>
