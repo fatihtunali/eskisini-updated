@@ -9,9 +9,15 @@ const h = s => String(s ?? '').replace(/[&<>"'`]/g, m =>
   m === '&' ? '&amp;' : m === '<' ? '&lt;' : m === '>' ? '&gt;' :
   m === '"' ? '&quot;' : m === "'" ? '&#39;' : '&#96;'
 );
-const fmtPrice = (minor, cur='TRY') =>
-  `${((Number(minor) || 0) / 100).toLocaleString('tr-TR')} ${h(cur)}`;
-
+const fmtPrice = (price, cur='TRY') => {
+  // Artık price zaten TL cinsinden geliyor, 100'e bölmeye gerek yok
+  const amount = Number(price) || 0;
+  
+  return `${amount.toLocaleString('tr-TR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })} ${h(cur)}`;
+};
 function attachImgFallback(rootEl) {
   if (!rootEl) return;
   rootEl.querySelectorAll('img[data-fallback]').forEach(img => {
@@ -66,6 +72,9 @@ function setParams(obj){
 
 // 🔧 Kart şablonu (artık tüm kart <a> değil): data-listing-id + .btn-buy eklendi
 function productCard(x){
+  const price = x.price || 0; // Sadece x.price kullan
+  const currency = x.currency || 'TRY';
+  
   const cover = x.cover || 'assets/hero.jpg';
   const href  = `listing.html?slug=${encodeURIComponent(x.slug)}`;
 
@@ -78,7 +87,7 @@ function productCard(x){
       </div>
       <div class="pad">
         <div class="p-meta">
-          <div class="p-price">${fmtPrice(x.price_minor, x.currency)}</div>
+          <div class="p-price">${fmtPrice(price, currency)}</div>
           <div class="p-views" aria-label="Görüntülenme">👁 ${Math.floor(50 + Math.random()*250)}</div>
         </div>
         <h3 class="p-title"><a href="${href}">${h(x.title)}</a></h3>
@@ -91,7 +100,6 @@ function productCard(x){
     </article>
   `;
 }
-
 
 function populateCitySelect(selected){
   const sel = document.getElementById('f_city');

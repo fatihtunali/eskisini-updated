@@ -9,43 +9,79 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Mesajlarım | Eskisini Ver Yenisini Al</title>
+  <meta name="description" content="Satıcılar ve alıcılar arasındaki mesaj konuşmaları.">
 
-  <link rel="stylesheet" href="css/styles.css">
-  <style>
-    /* Hafif liste stili (styles.css yoksa hoş görünsün) */
-    .list { display:grid; gap:10px; }
-    .list .item {
-      display:block; background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-      padding:12px; text-decoration:none; color:#111827;
-    }
-    .list .item:hover { background:#f9fafb; }
-    .list .item .muted { color:#6b7280; }
-    .list .item .small { font-size:.9em; }
-  </style>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/messages.css">
 </head>
 <body>
   <!-- HEADER -->
   <div data-include="partials/header.html"></div>
 
   <main class="container section">
-    <h1>Mesajlarım</h1>
-    <div id="threads" class="list"></div>
+    <div class="messages-layout">
+      <!-- SOL: Konuşma Listesi -->
+      <div class="threads-sidebar">
+        <div class="sidebar-header">
+          <h1>Mesajlarım</h1>
+          <button class="btn btn-sm" id="refreshBtn" title="Yenile">🔄</button>
+        </div>
+        <div id="threads" class="threads-list" aria-live="polite"></div>
+      </div>
+
+      <!-- SAĞ: Aktif Konuşma -->
+      <div class="chat-area">
+        <div class="chat-header" id="chatHeader" hidden>
+          <div class="chat-info">
+            <h2 id="chatTitle">Konuşma</h2>
+            <div class="chat-meta muted" id="chatMeta"></div>
+          </div>
+          <div class="chat-actions">
+            <button class="btn btn-sm ghost" id="chatSettings" title="Ayarlar">⚙️</button>
+          </div>
+        </div>
+
+        <div class="chat-content">
+          <div id="msgs" class="chat-messages" aria-live="polite">
+            <div class="chat-welcome">
+              <div class="welcome-icon">💬</div>
+              <h3>Mesajlaşmaya Başlayın</h3>
+              <p class="muted">Sol taraftan bir konuşma seçin veya yeni bir mesaj gönderin.</p>
+            </div>
+          </div>
+          
+          <form id="send" class="chat-input" hidden>
+            <div class="input-group">
+              <input name="body" id="msgBody" placeholder="Mesajınızı yazın..." 
+                     autocomplete="off" required maxlength="1000">
+              <div class="input-actions">
+                <button type="button" class="btn-icon" id="emojiBtn" title="Emoji">😊</button>
+                <button type="submit" class="btn primary" id="sendBtn">
+                  <span class="btn-text">Gönder</span>
+                  <span class="btn-loading" hidden>⏳</span>
+                </button>
+              </div>
+            </div>
+            <div class="char-counter">
+              <span id="charCount">0</span>/1000
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- FOOTER -->
   <div data-include="partials/footer.html"></div>
 
-<script src="/js/partials.js"></script>
-<script src="/js/config.js"></script>
-<script src="/js/api.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/session.js"></script>
-<script src="/js/header.js"></script>
-
-<!-- sayfaya özel -->
-<script src="/js/messages.js"></script>   <!-- gerekiyorsa -->
-<script src="/js/profile.js"></script>    <!-- gerekiyorsa -->
-<script src="/js/listing.js"></script>    <!-- gerekiyorsa -->
+  <!-- JS - sadece gerekli olanlar -->
+  <script src="/js/partials.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/session.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/messages.js"></script>
 
   <script>includePartials();</script>
 </body>

@@ -11,6 +11,7 @@
   let currentUser = null;
   let currentThreadId = null;
   let pollTimer = null;
+  let lastFetchController = null; // Bu da içeride olmalı
 
   function escapeHTML(s){ return (s??'').toString().replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
   function toLogin(){ location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search); }
@@ -29,7 +30,9 @@
   }
 
   async function loadThreads() {
-    const root = $('#threads'); if (!root) return;
+    const root = $('#threads'); 
+    if (!root) return;
+    
     root.innerHTML = '<div class="pad">Yükleniyor…</div>';
 
     try {
@@ -64,32 +67,12 @@
     }
   }
 
-  async function ensureConversationFromQuery(qs) {
-    const listing = Number(qs.get('listing') || 0);
-    const seller  = Number(qs.get('seller') || 0);
-    if (!listing) return null;
-
-    const payload = { listing_id: listing };
-    if (seller > 0) payload.to_user_id = seller;
-
-    const r = await fetch(`${API}/api/messages/start`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...headersNoStore },
-      cache: 'no-store',
-      body: JSON.stringify(payload)
-    });
-    if (r.status === 401) { toLogin(); return null; }
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || d.ok === false) return null;
-    return d.conversation_id;
-  }
-
   async function loadThreadMessages() {
     const box = $('#msgs');
     if (!box || !currentThreadId) return;
 
-    // Eski isteği iptal et
+    console.log('Loading messages for thread:', currentThreadId); // Debug
+
     try { lastFetchController?.abort(); } catch {}
     lastFetchController = new AbortController();
 
@@ -103,10 +86,14 @@
           signal: lastFetchController.signal
         }
       );
+      
+      console.log('Thread response:', r.status); // Debug
+      
       if (r.status === 401) { toLogin(); return; }
       if (!r.ok) throw new Error('HTTP ' + r.status);
 
       const data = await r.json();
+      console.log('Thread data:', data); // Debug
 
       box.innerHTML = (data.messages || []).map(m=>{
         const mine = !!(currentUser && m.sender_id === currentUser.id);
@@ -119,14 +106,16 @@
 
       box.scrollTop = box.scrollHeight;
     } catch (e) {
-      if (e?.name === 'AbortError') return; // yeni istek başlatıldı
+      if (e?.name === 'AbortError') return;
       console.error('[thread] load error', e);
       box.innerHTML = '<div class="pad error">Mesajlar yüklenemedi.</div>';
     }
   }
 
   function wireSendForm() {
-    const form = $('#send'); if (!form) return;
+    const form = $('#send'); 
+    if (!form) return;
+    
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentThreadId) return;
@@ -149,30 +138,32 @@
   }
 
   async function bootThread() {
-    const box = $('#msgs'); if (!box) return;
+    const box = $('#msgs'); 
+    if (!box) {
+      console.log('No #msgs element found'); // Debug
+      return;
+    }
 
-    // kullanıcıyı bir kez getir
+    console.log('Booting thread...'); // Debug
+
     currentUser = await whoami();
     if (!currentUser) { toLogin(); return; }
 
     const qs = new URLSearchParams(location.search);
     let id = qs.get('id');
+    
+    console.log('Thread ID from URL:', id); // Debug
 
     if (!id) {
-      const convId = await ensureConversationFromQuery(qs);
-      if (!convId) { box.innerHTML = '<div class="pad error">Konuşma açılamadı.</div>'; return; }
-      const u = new URL(location.href);
-      u.searchParams.delete('listing'); u.searchParams.delete('seller');
-      u.searchParams.set('id', convId);
-      history.replaceState(null, '', u.toString());
-      id = String(convId);
+      box.innerHTML = '<div class="pad error">Konuşma ID bulunamadı.</div>';
+      return;
     }
 
     currentThreadId = id;
     wireSendForm();
     await loadThreadMessages();
 
-    // polling: görünürlük durumuna göre yönet
+    // Polling setup...
     function startPolling() {
       clearInterval(pollTimer);
       pollTimer = setInterval(loadThreadMessages, 5000);
@@ -191,9 +182,28 @@
     window.addEventListener('beforeunload', () => stopPolling(), { once: true });
   }
 
+  // Boot fonksiyonu artık IIFE içinde
   function boot() {
-    loadThreads();
-    bootThread();
+    console.log('Messages boot called'); // Debug
+    
+    // Sadece messages.html'deyse thread listesini yükle
+    if (document.getElementById('threads')) {
+      console.log('Loading threads...');
+      loadThreads();
+    }
+    
+    // Sadece thread.html'deyse veya ?id parametresi varsa thread'i yükle
+    if (document.getElementById('msgs')) {
+      const hasId = new URLSearchParams(location.search).get('id');
+      const isThreadPage = location.pathname.includes('thread');
+      
+      console.log('Has ID:', hasId, 'Is thread page:', isThreadPage);
+      
+      if (hasId || isThreadPage) {
+        console.log('Booting thread...');
+        bootThread();
+      }
+    }
   }
 
   if (window.includePartials) {
