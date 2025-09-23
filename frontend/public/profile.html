@@ -11,27 +11,12 @@
   <title>Hesabım | Eskisini Ver Yenisini Al</title>
   <link rel="stylesheet" href="/css/styles.css" />
   <link rel="stylesheet" href="/css/profile.css" />
-  <link rel="stylesheet" href="/css/billing.css" />
+  <link rel="stylesheet" href="/css/modal-fix.css" />
+  <link rel="stylesheet" href="/css/fav.css" />
+  <!-- Küçük stil dokunuşları (opsiyonel) --> 
+  <link rel="stylesheet" href="/css/fav.css" />
 
-  <style>
-    /* Billing kart/çubukları için küçük dokunuşlar (opsiyonel) */
-    .billing-wrap { display: grid; gap: 16px; }
-    .current-plan-card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:16px; }
-    .plan-header { display:flex; align-items:center; gap:12px; }
-    .plan-icon { font-size:28px; }
-    .plan-info .plan-name { font-weight:700; }
-    .plan-badge { padding:4px 8px; border-radius:999px; font-size:.8rem; font-weight:600; background:#f3f4f6; margin-left:auto; }
-    .usage-bars { display:grid; gap:12px; }
-    .usage-bar-container { background:#fff; border:1px dashed #e5e7eb; border-radius:10px; padding:12px; }
-    .usage-bar-header { display:flex; justify-content:space-between; gap:8px; align-items:center; }
-    .usage-bar { height:10px; background:#f3f4f6; border-radius:999px; overflow:hidden; margin-top:8px; }
-    .usage-fill { height:100%; background:#3b82f6; }
-    .usage-fill.warning { background:#f59e0b; }
-    .usage-fill.danger { background:#ef4444; }
-    .usage-warning { margin-top:6px; font-size:.9rem; color:#b45309; }
-    .usage-warning.warning { color:#92400e; }
-    .btn.primary { background:#111827; color:#fff; border-radius:10px; padding:10px 14px; border:0; cursor:pointer; }
-  </style>
+ 
 </head>
 <body>
   <!-- HEADER -->
@@ -67,7 +52,6 @@
 
   <!-- ÖNEMLİ: billing sistemi -->
   <script src="/js/billing.js"></script>
-  <script src="/js/modal-fix.js"></script>
 
   <script>
     // Header/Footer
